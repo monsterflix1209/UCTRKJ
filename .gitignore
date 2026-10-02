@@ -1,0 +1,15 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local database & user settings
+raf_citizens_db.json
+raf_config.json
+
+# Generated Pass Documents
+Pass_*.txt
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
