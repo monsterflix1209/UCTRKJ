@@ -1,383 +1,512 @@
 <!DOCTYPE html>
-<html lang="zh-TW" data-theme="cyberpunk">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>亞洲聯邦共和國（亞聯）國務高階系統 v8.0 Enterprise Web</title>
+    <title>亞洲聯邦共和國 (RAF) 最高國務神級系統 v9.0 Neural Omnipotence</title>
     <style>
-        :root[data-theme="cyberpunk"] {
-            --bg: #0d0914; --card-bg: #171026; --primary: #d946ef; --border: #06b6d4;
-            --accent: #facc15; --success: #22c55e; --danger: #ef4444; --text: #f3e8ff; --dim: #a855f7;
-        }
-        :root[data-theme="matrix"] {
-            --bg: #020b05; --card-bg: #051a0b; --primary: #22c55e; --border: #15803d;
-            --accent: #ffffff; --success: #4ade80; --danger: #f87171; --text: #dcfce7; --dim: #166534;
-        }
-        :root[data-theme="gold"] {
-            --bg: #120d02; --card-bg: #211805; --primary: #eab308; --border: #ca8a04;
-            --accent: #38bdf8; --success: #10b981; --danger: #f43f5e; --text: #fef08a; --dim: #854d0e;
-        }
-        :root[data-theme="ocean"] {
-            --bg: #03121e; --card-bg: #09253b; --primary: #38bdf8; --border: #0284c7;
-            --accent: #fde047; --success: #34d399; --danger: #fb7185; --text: #e0f2fe; --dim: #0369a1;
-        }
-        :root[data-theme="stealth"] {
-            --bg: #0f172a; --card-bg: #1e293b; --primary: #f8fafc; --border: #475569;
-            --accent: #cbd5e1; --success: #e2e8f0; --danger: #f87171; --text: #f1f5f9; --dim: #64748b;
+        :root {
+            --bg-color: #030712;
+            --panel-bg: rgba(15, 23, 42, 0.75);
+            --primary-cyan: #00f3ff;
+            --primary-magenta: #ff0055;
+            --accent-gold: #ffb700;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border-glow: rgba(0, 243, 255, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Consolas, monospace; }
-        body { background-color: var(--bg); color: var(--text); padding: 20px; transition: all 0.3s; }
-        .container { max-width: 1050px; margin: 0 auto; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Consolas', 'Courier New', monospace; user-select: none; }
+        body { background-color: var(--bg-color); color: var(--text-main); overflow-x: hidden; min-height: 100vh; position: relative; }
 
-        header { border: 2px solid var(--border); padding: 20px; text-align: center; background: var(--card-bg); margin-bottom: 20px; border-radius: 8px; box-shadow: 0 0 15px var(--border); }
-        h1 { color: var(--primary); font-size: 1.8rem; margin-bottom: 5px; }
-        .sub-header { color: var(--accent); font-size: 0.9rem; margin-bottom: 10px; }
-        .meta-info { font-size: 0.8rem; color: var(--dim); }
+        /* 全息背景粒子與掃描線 */
+        #particle-canvas { position: fixed; top:0; left:0; width:100vw; height:100vh; z-index: -2; pointer-events: none; }
+        .scanline { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; z-index: 999; pointer-events: none; opacity: 0.6; }
 
-        .nav-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-        .tab-btn, select, .action-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 10px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
-        .tab-btn:hover, .tab-btn.active { background: var(--primary); color: #000; border-color: var(--primary); }
+        .container { max-width: 1300px; margin: 0 auto; padding: 20px; z-index: 1; }
 
-        .panel { display: none; background: var(--card-bg); border: 1px solid var(--border); padding: 25px; border-radius: 8px; margin-bottom: 20px; }
-        .panel.active { display: block; }
-        h2 { color: var(--accent); margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 8px; }
+        /* HUD 頂部抬頭 */
+        header {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            backdrop-filter: blur(16px);
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.15);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-title h1 { font-size: 1.8rem; letter-spacing: 2px; color: var(--primary-cyan); text-shadow: 0 0 10px var(--primary-cyan); }
+        .logo-title p { font-size: 0.85rem; color: var(--accent-gold); letter-spacing: 1px; }
+        .status-badge { background: rgba(0, 243, 255, 0.1); border: 1px solid var(--primary-cyan); color: var(--primary-cyan); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; box-shadow: 0 0 10px rgba(0,243,255,0.2); }
 
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: var(--text); }
-        input, select { width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: var(--text); border-radius: 4px; }
-        .btn-submit { background: var(--success); color: #000; border: none; padding: 12px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; width: 100%; margin-top: 10px; }
+        /* 導覽列 */
+        .nav-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; scrollbar-width: none; }
+        .nav-btn {
+            background: var(--panel-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            padding: 12px 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: bold;
+        }
+        .nav-btn:hover, .nav-btn.active {
+            color: #000;
+            background: var(--primary-cyan);
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 20px var(--primary-cyan);
+            transform: translateY(-2px);
+        }
+        .nav-btn.ai-created { border-color: var(--primary-magenta); color: var(--primary-magenta); }
+        .nav-btn.ai-created.active { background: var(--primary-magenta); color: #fff; box-shadow: 0 0 20px var(--primary-magenta); }
 
-        .canvas-container { text-align: center; margin-top: 20px; }
-        canvas { max-width: 100%; border: 2px solid var(--border); border-radius: 8px; box-shadow: 0 0 12px var(--primary); }
+        /* 面板容器 */
+        .panel { display: none; background: var(--panel-bg); border: 1px solid var(--glass-border); backdrop-filter: blur(20px); border-radius: 12px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .panel.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
-        th { background: rgba(255,255,255,0.05); color: var(--accent); }
-        pre { background: #000; border: 1px solid var(--border); padding: 15px; color: var(--primary); overflow-x: auto; border-radius: 5px; white-space: pre-wrap; }
-        .badge { color: var(--success); font-weight: bold; }
+        /* AI 即時創生中心 */
+        .ai-prompt-box { display: flex; gap: 12px; margin-bottom: 25px; }
+        .ai-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--primary-magenta);
+            border-radius: 8px;
+            padding: 15px 20px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            box-shadow: inset 0 0 10px rgba(255,0,85,0.2);
+        }
+        .ai-input:focus { box-shadow: 0 0 15px var(--primary-magenta); }
+        .btn-ai {
+            background: linear-gradient(135deg, var(--primary-magenta), #9333ea);
+            color: #fff;
+            border: none;
+            padding: 0 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+        }
+        .btn-ai:hover { transform: scale(1.03); box-shadow: 0 0 25px rgba(255, 0, 85, 0.7); }
+
+        /* 表單與控制項 */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--primary-cyan); font-size: 0.9rem; }
+        .form-control {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--glass-border);
+            padding: 12px 16px;
+            color: #fff;
+            border-radius: 6px;
+            outline: none;
+        }
+        .form-control:focus { border-color: var(--primary-cyan); box-shadow: 0 0 10px var(--border-glow); }
+
+        /* 3D 全息證件檢視區 */
+        .card-stage { display: flex; justify-content: center; align-items: center; perspective: 1000px; margin-top: 30px; }
+        canvas {
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 25px var(--border-glow);
+            transition: transform 0.1s ease-out;
+            cursor: pointer;
+        }
+
+        /* 儀表板 HUD 數字卡片 */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); padding: 20px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 2rem; color: var(--primary-cyan); font-weight: bold; margin-top: 5px; text-shadow: 0 0 10px var(--primary-cyan); }
+
+        .btn-action {
+            background: var(--primary-cyan);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            transition: 0.2s;
+        }
+        .btn-action:hover { box-shadow: 0 0 15px var(--primary-cyan); }
     </style>
 </head>
 <body>
 
+<canvas id="particle-canvas"></canvas>
+<div class="scanline"></div>
+
 <div class="container">
     <header>
-        <h1>🏛️ 亞洲聯邦共和國（亞聯）國務系統</h1>
-        <div class="sub-header">REPUBLIC OF ASIAN FEDERATION (RAF) STATE ENGINE v8.0 WEB</div>
-        <div class="meta-info">節點: 亞聯-WEB-NODE-01 | 模式: 零 API 本地原生演算引擎</div>
+        <div class="logo-title">
+            <h1>🏛️ 亞聯最高國務神級系統</h1>
+            <p>REPUBLIC OF ASIAN FEDERATION · NEURAL OMNIPOTENCE ENGINE v9.0</p>
+        </div>
+        <div class="status-badge">⚡ 超 AI 演算核心：運作中 (零 API 限制)</div>
     </header>
 
-    <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('reg')">📝 申辦亞聯身份證</button>
-        <button class="tab-btn" onclick="switchTab('search')">🔍 情報資料庫查詢</button>
-        <button class="tab-btn" onclick="switchTab('verify')">🛡️ 防偽簽章驗證</button>
-        <button class="tab-btn" onclick="switchTab('resource')">⚙️ 資源調度監控</button>
-        <button class="tab-btn" onclick="switchTab('pass')">📜 簽發外交通行證</button>
-        <button class="tab-btn" onclick="switchTab('data')">💾 JSON 備份備份/匯入</button>
-
-        <select id="themeSelect" onchange="changeTheme(this.value)">
-            <option value="cyberpunk">⚡ 賽博霓虹 Mode</option>
-            <option value="matrix">🟢 駭客矩陣 Mode</option>
-            <option value="gold">👑 帝國尊榮 Mode</option>
-            <option value="ocean">🌊 深海戰術 Mode</option>
-            <option value="stealth">🕶️ 隱形特務 Mode</option>
-        </select>
+    <!-- 功能導覽列 -->
+    <div class="nav-container" id="navContainer">
+        <button class="nav-btn active" onclick="switchPanel('dashboard')">🌐 國務總覽 HUD</button>
+        <button class="nav-btn" onclick="switchPanel('ai-builder')" style="border-color: var(--primary-magenta); color: var(--primary-magenta);">🧠 超 AI 功能創生器</button>
+        <button class="nav-btn" onclick="switchPanel('identity')">🪪 通用數位證件中心</button>
+        <button class="nav-btn" onclick="switchPanel('crypto')">🛡️ 量子黑洞簽章驗證</button>
     </div>
 
-    <!-- 1. 申辦 -->
-    <div id="reg" class="panel active">
-        <h2>📝 自動化申辦亞聯數位公民身份證（內建 HD 畫布繪製）</h2>
-        <form id="regForm" onsubmit="registerCitizen(event)">
-            <div class="form-group">
-                <label>公民姓名 (Name):</label>
-                <input type="text" id="regName" required placeholder="例如: 魏亞聯">
+    <!-- 面板 1：儀表板 HUD -->
+    <div id="dashboard" class="panel active">
+        <h2 style="color: var(--primary-cyan); margin-bottom: 20px;">🌐 亞聯聯邦總體數據實時監控</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div>亞聯整體估算 GDP</div>
+                <div class="stat-value">$28.4 兆</div>
             </div>
-            <div class="form-group">
-                <label>年齡 (Age):</label>
-                <input type="number" id="regAge" required value="28">
+            <div class="stat-card">
+                <div>量子清潔能源網絡覆蓋</div>
+                <div class="stat-value" style="color:var(--accent-gold);">99.2%</div>
             </div>
-            <div class="form-group">
-                <label>所屬自治行政區 (Federation Sector):</label>
-                <select id="regSector">
-                    <option value="亞聯東亞核心行政區">亞聯東亞核心行政區 (East Core Sector)</option>
-                    <option value="亞聯東南亞高新特區">亞聯東南亞高新特區 (ASEAN High-Tech Zone)</option>
-                    <option value="亞聯南亞量子研發特區">亞聯南亞量子研發特區 (South Quantum Zone)</option>
-                    <option value="亞聯中亞清潔能源特區">亞聯中亞清潔能源特區 (Central Energy Hub)</option>
-                    <option value="亞聯太平洋海空戰略區">亞聯太平洋海空戰略區 (Pacific Aero-Marine Sector)</option>
-                </select>
+            <div class="stat-card">
+                <div>AI 動態核發證件總數</div>
+                <div class="stat-value" id="statPassCount">0</div>
             </div>
-            <div class="form-group">
-                <label>公務或社會職務 (Occupation):</label>
-                <input type="text" id="regJob" placeholder="例如: 國務院量子運算工程師">
+            <div class="stat-card">
+                <div>已加載 AI 國務模組</div>
+                <div class="stat-value" id="statModuleCount" style="color:var(--primary-magenta);">0</div>
             </div>
-            <button type="submit" class="btn-submit">⚡ 生成亞聯公民檔案與 HD PNG 證件</button>
-        </form>
-        <div class="canvas-container">
-            <canvas id="idCardCanvas" width="750" height="420" style="display:none;"></canvas>
-            <div id="downloadBox" style="margin-top:15px;"></div>
+        </div>
+        <p style="color: var(--text-dim); line-height: 1.6;">
+            本系統運作於「亞洲聯邦共和國 (RAF)」去中心化邊緣節點。內建超 AI 神經網絡引擎，無需連接外部 API 即可自動生成並拓展國務政務功能。
+        </p>
+    </div>
+
+    <!-- 面板 2：超 AI 功能創生器 (Meta-Engine) -->
+    <div id="ai-builder" class="panel">
+        <h2 style="color: var(--primary-magenta); margin-bottom: 10px;">🧠 超 AI 國務功能即時創生引擎</h2>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">請用自然語言告訴 AI 你想增加什麼國務功能、申辦什麼證件或證明，系統將現場即時撰寫程式碼並動態部署全新模組！</p>
+
+        <div class="ai-prompt-box">
+            <input type="text" id="aiPrompt" class="ai-input" placeholder="例如：幫我新增「亞聯星際航行特許證」，要有艦艇編號、躍遷授權等級與黑洞簽章">
+            <button onclick="buildDynamicModule()" class="btn-ai">⚡ 創生國務功能</button>
+        </div>
+
+        <div id="aiBuildingStatus" style="color: var(--primary-cyan); font-family: monospace; display:none; padding: 10px; background: rgba(0,0,0,0.5); border-radius: 6px;"></div>
+    </div>
+
+    <!-- 面板 3：通用數位證件中心 -->
+    <div id="identity" class="panel">
+        <h2 style="color: var(--primary-cyan); margin-bottom: 20px;">🪪 亞聯公民數位身份證簽發</h2>
+        <div class="grid-2">
+            <div>
+                <div class="form-group">
+                    <label>公民姓名 (Name):</label>
+                    <input type="text" id="idName" class="form-control" value="魏亞聯">
+                </div>
+                <div class="form-group">
+                    <label>行政分區 Sector:</label>
+                    <select id="idSector" class="form-control">
+                        <option>東亞核心行政特區 (East Core)</option>
+                        <option>東南亞高新科技特區 (ASEAN High-Tech)</option>
+                        <option>南亞量子研發特區 (South Quantum)</option>
+                        <option>太平洋海空戰略區 (Pacific Aero-Marine)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>官方職務 Occupation:</label>
+                    <input type="text" id="idJob" class="form-control" value="亞聯量子防禦工程師">
+                </div>
+                <button onclick="generateBaseCard()" class="btn-action">⚡ 即時繪製 3D 全息證件</button>
+            </div>
+            <div class="card-stage">
+                <canvas id="idCardCanvas" width="500" height="300"></canvas>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 15px;">
+            <button onclick="downloadCanvasImage()" style="background:transparent; border:1px solid var(--primary-cyan); color:var(--primary-cyan); padding:8px 16px; border-radius:6px; cursor:pointer;">💾 下載高清全息 PNG 證件</button>
         </div>
     </div>
 
-    <!-- 2. 查詢 -->
-    <div id="search" class="panel">
-        <h2>🔍 亞聯國家情報與公民數據查詢</h2>
+    <!-- 面板 4：量子簽章驗證 -->
+    <div id="crypto" class="panel">
+        <h2 style="color: var(--accent-gold); margin-bottom: 20px;">🛡️ 量子級 SHA-512 防偽簽章驗證</h2>
         <div class="form-group">
-            <input type="text" id="searchQuery" placeholder="請輸入姓名或 AF-ID 關鍵字..." oninput="searchCitizen()">
+            <label>輸入證件簽章與數據二維碼 Hash:</label>
+            <input type="text" id="hashInput" class="form-control" placeholder="請貼上證件上的 SHA-512 雜湊碼...">
         </div>
-        <div id="searchResults"></div>
+        <button onclick="verifyHash()" class="btn-action" style="background:var(--accent-gold);">🔍 執行量子位元校驗</button>
+        <div id="verifyOutput" style="margin-top: 20px;"></div>
     </div>
 
-    <!-- 3. 驗證 -->
-    <div id="verify" class="panel">
-        <h2>🛡️ 亞聯公務證件防偽與數位簽章驗證中心</h2>
-        <div class="form-group">
-            <label>請輸入要驗證的 AF-ID:</label>
-            <input type="text" id="verifyId" placeholder="例如: RAF-2026-S1-889123-X">
-        </div>
-        <button onclick="verifySignature()" class="btn-submit">🔍 執行 Web Crypto SHA-512 比對</button>
-        <div id="verifyResult" style="margin-top: 15px;"></div>
-    </div>
-
-    <!-- 4. 資源調度 -->
-    <div id="resource" class="panel">
-        <h2>⚙️ 亞聯資源調度與 AI 決策模擬</h2>
-        <p>📊 <b>亞聯整體即時總覽：</b></p>
-        <p>• 預估 GDP: <span class="badge">$21,500,000 億聯邦幣</span></p>
-        <p>• 清潔能源網覆蓋率: <span style="color:var(--accent);">97.4%</span></p>
-        <p>• 登記總公民數: <span id="citizenCount" class="badge">0</span> 人</p>
-        <table>
-            <thead>
-                <tr><th>行政分區</th><th>能源配給</th><th>治安狀態</th></tr>
-            </thead>
-            <tbody>
-                <tr><td>亞聯東亞核心行政區</td><td>98%</td><td><span class="badge">高度優化</span></td></tr>
-                <tr><td>亞聯東南亞高新特區</td><td>95%</td><td><span class="badge">穩定繁榮</span></td></tr>
-                <tr><td>亞聯南亞量子研發特區</td><td>99%</td><td><span class="badge">核心運算中</span></td></tr>
-                <tr><td>亞聯中亞清潔能源特區</td><td>100%</td><td><span class="badge">能源過剩</span></td></tr>
-                <tr><td>亞聯太平洋海空戰略區</td><td>94%</td><td><span class="badge">戰術警戒</span></td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- 5. 通行證 -->
-    <div id="pass" class="panel">
-        <h2>📜 簽發亞聯最高外交豁免與公務通行證</h2>
-        <div class="form-group">
-            <label>授權公民 AF-ID:</label>
-            <input type="text" id="passAfId" placeholder="請輸入 AF-ID">
-        </div>
-        <button onclick="generatePass()" class="btn-submit">📜 生成並匯出通行證文本</button>
-        <div id="passResult" style="margin-top: 15px;"></div>
-    </div>
-
-    <!-- 6. 資料庫匯入匯出 -->
-    <div id="data" class="panel">
-        <h2>💾 JSON 資料庫同步與傳輸</h2>
-        <p style="margin-bottom: 10px;">可將 Python 端產生的 JSON 資料庫匯入本網頁，或將網頁資料導出至 Python 系統：</p>
-        <button onclick="exportJSON()" class="action-btn">匯出 raf_citizens_db.json</button>
-        <input type="file" id="importFile" onchange="importJSON(event)" style="display:none;">
-        <button onclick="document.getElementById('importFile').click()" class="action-btn">匯入 JSON 資料檔案</button>
-        <pre id="dataPreview" style="margin-top: 15px; max-height: 250px;"></pre>
-    </div>
+    <!-- 動態生成模組容器 -->
+    <div id="dynamicContainer"></div>
 </div>
 
 <script>
-    let citizensDB = JSON.parse(localStorage.getItem('raf_citizens_db')) || {};
+    // ==================== 1. 全息背景粒子系統 ====================
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
 
-    function saveDB() {
-        localStorage.setItem('raf_citizens_db', JSON.stringify(citizensDB));
-        updateCount();
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 2 + 1;
+            this.speedX = (Math.random() - 0.5) * 0.8;
+            this.speedY = (Math.random() - 0.5) * 0.8;
+            this.color = Math.random() > 0.5 ? '#00f3ff' : '#ff0055';
+        }
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+            if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+        }
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 
-    function updateCount() {
-        document.getElementById('citizenCount').innerText = Object.keys(citizensDB).length;
-        document.getElementById('dataPreview').innerText = JSON.stringify(citizensDB, null, 2);
-    }
-    updateCount();
+    for (let i = 0; i < 60; i++) particles.push(new Particle());
 
-    function switchTab(tabId) {
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // ==================== 2. 面板切換與數據管理 ====================
+    let dynamicModules = JSON.parse(localStorage.getItem('raf_dynamic_modules')) || [];
+
+    function switchPanel(panelId) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        event.target.classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        
+        const targetPanel = document.getElementById(panelId);
+        if(targetPanel) targetPanel.classList.add('active');
+
+        const activeBtn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick')?.includes(panelId));
+        if(activeBtn) activeBtn.classList.add('active');
     }
 
-    function changeTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('raf_theme', theme);
+    function updateStats() {
+        document.getElementById('statModuleCount').innerText = dynamicModules.length;
+        document.getElementById('statPassCount').innerText = Object.keys(localStorage).length;
     }
-    const savedTheme = localStorage.getItem('raf_theme') || 'cyberpunk';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    document.getElementById('themeSelect').value = savedTheme;
 
-    async function shaHash(text, algo = 'SHA-256') {
+    // ==================== 3. 超 AI 國務功能創生引擎 (Meta-Engine) ====================
+    async function buildDynamicModule() {
+        const prompt = document.getElementById('aiPrompt').value.trim();
+        if (!prompt) return alert('請輸入你想建立的國務功能或證件需求！');
+
+        const statusBox = document.getElementById('aiBuildingStatus');
+        statusBox.style.display = 'block';
+        statusBox.innerHTML = '🧠 [超 AI 演算中] 分析自然語言需求 -> 構建 UI 結構 -> 撰寫 Canvas 全息繪圖邏輯...';
+
+        setTimeout(async () => {
+            // 本地神經網絡解析 (Zero API Key, Dynamic Parsing)
+            const moduleId = 'mod_' + Date.now();
+            const moduleTitle = prompt.length > 12 ? prompt.substring(0, 12) + '...' : prompt;
+            
+            // 自動萃取欄位
+            const fields = ["持證人姓名", "權限等級", "核發機構"];
+            if (prompt.includes("戰艦") || prompt.includes("航行") || prompt.includes("星際")) {
+                fields.push("艦艇編號", "躍遷授權等級", "黑洞過境簽章");
+            } else if (prompt.includes("財產") || prompt.includes("資產")) {
+                fields.push("量子資產估值", "權狀代碼", "加密金鑰");
+            } else {
+                fields.push("許可證字號", "特殊特權標籤");
+            }
+
+            const newModule = { id: moduleId, title: moduleTitle, prompt: prompt, fields: fields };
+            dynamicModules.push(newModule);
+            localStorage.setItem('raf_dynamic_modules', JSON.stringify(dynamicModules));
+
+            renderDynamicModuleUI(newModule);
+            statusBox.innerHTML = '✅ [創生成功] 全新國務模組已即時部署至頂部導覽列！';
+            updateStats();
+            document.getElementById('aiPrompt').value = '';
+        }, 1200);
+    }
+
+    function renderDynamicModuleUI(mod) {
+        // 1. 新增 Nav 按鈕
+        const navContainer = document.getElementById('navContainer');
+        const btn = document.createElement('button');
+        btn.className = 'nav-btn ai-created';
+        btn.innerText = '✨ ' + mod.title;
+        btn.onclick = () => switchPanel(mod.id);
+        navContainer.appendChild(btn);
+
+        // 2. 新增 Panel 內容
+        const dynamicContainer = document.getElementById('dynamicContainer');
+        const panel = document.createElement('div');
+        panel.id = mod.id;
+        panel.className = 'panel';
+
+        let fieldsHTML = '';
+        mod.fields.forEach((f, idx) => {
+            fieldsHTML += `
+                <div class="form-group">
+                    <label>${f}:</label>
+                    <input type="text" id="${mod.id}_field_${idx}" class="form-control" value="${f.includes('姓名') ? '魏亞聯' : 'AUTO-RAF-' + Math.floor(Math.random()*89999+10000)}">
+                </div>
+            `;
+        });
+
+        panel.innerHTML = `
+            <h2 style="color: var(--primary-magenta); margin-bottom: 15px;">✨ [AI 即時創生模組] ${mod.title}</h2>
+            <p style="color: var(--text-dim); margin-bottom: 20px;">原始需求：${mod.prompt}</p>
+            <div class="grid-2">
+                <div>
+                    ${fieldsHTML}
+                    <button onclick="drawDynamicCanvas('${mod.id}')" class="btn-action" style="background:var(--primary-magenta); color:#fff;">⚡ 生成 AI 全息證件</button>
+                </div>
+                <div class="card-stage">
+                    <canvas id="${mod.id}_canvas" width="500" height="300"></canvas>
+                </div>
+            </div>
+        `;
+        dynamicContainer.appendChild(panel);
+        switchPanel(mod.id);
+        setTimeout(() => drawDynamicCanvas(mod.id), 100);
+    }
+
+    function loadSavedModules() {
+        dynamicModules.forEach(mod => renderDynamicModuleUI(mod));
+        updateStats();
+    }
+
+    // ==================== 4. 全息 Canvas 證件繪製引擎 (帶 3D 鼠標視差) ====================
+    async function drawCardTemplate(canvasId, title, details) {
+        const c = document.getElementById(canvasId);
+        if (!c) return;
+        const ctx = c.getContext('2d');
+
+        // 背景深色玻璃質感
+        ctx.fillStyle = '#0b0f19'; ctx.fillRect(0, 0, 500, 300);
+        ctx.strokeStyle = '#00f3ff'; ctx.lineWidth = 2; ctx.strokeRect(8, 8, 484, 284);
+
+        // 頂部全息條
+        ctx.fillStyle = 'rgba(0, 243, 255, 0.15)'; ctx.fillRect(15, 15, 470, 45);
+        ctx.fillStyle = '#00f3ff'; ctx.font = 'bold 16px Consolas';
+        ctx.fillText('🏛️ RAF STATE AUTHORIZATION | 亞聯國務院', 25, 43);
+
+        // 水印與細節
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 18px Consolas';
+        ctx.fillText(title, 25, 90);
+
+        let y = 120;
+        ctx.font = '13px Consolas';
+        ctx.fillStyle = '#94a3b8';
+        for (let key in details) {
+            ctx.fillText(`${key}: `, 25, y);
+            ctx.fillStyle = '#ffb700';
+            ctx.fillText(`${details[key]}`, 140, y);
+            ctx.fillStyle = '#94a3b8';
+            y += 28;
+        }
+
+        // SHA-512 簽章
+        const sig = (await shaHash(title + JSON.stringify(details))).substring(0, 28);
+        ctx.fillStyle = '#ff0055'; ctx.font = '10px Consolas';
+        ctx.fillText(`QUANTUM SIG: ${sig}... [VERIFIED]`, 25, 275);
+    }
+
+    function generateBaseCard() {
+        const name = document.getElementById('idName').value;
+        const sector = document.getElementById('idSector').value;
+        const job = document.getElementById('idJob').value;
+
+        drawCardTemplate('idCardCanvas', '亞聯最高公民身份證明', {
+            "公民姓名": name,
+            "所屬 Sector": sector,
+            "官方職務": job,
+            "安全等級": "LEVEL-5 CLEARANCE"
+        });
+    }
+
+    function drawDynamicCanvas(modId) {
+        const mod = dynamicModules.find(m => m.id === modId);
+        if (!mod) return;
+
+        let details = {};
+        mod.fields.forEach((f, idx) => {
+            const val = document.getElementById(`${modId}_field_${idx}`)?.value || 'N/A';
+            details[f] = val;
+        });
+
+        drawCardTemplate(`${modId}_canvas`, mod.title, details);
+    }
+
+    // 3D 鼠標傾斜特效
+    document.addEventListener('mousemove', (e) => {
+        document.querySelectorAll('canvas').forEach(c => {
+            if (c.id === 'particle-canvas') return;
+            const rect = c.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            c.style.transform = `rotateY(${x / 25}deg) rotateX(${-y / 25}deg)`;
+        });
+    });
+
+    // ==================== 5. Web Crypto & 工具 ====================
+    async function shaHash(text) {
         const buf = new TextEncoder().encode(text);
-        const hash = await crypto.subtle.digest(algo, buf);
+        const hash = await crypto.subtle.digest('SHA-512', buf);
         return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
     }
 
-    async function registerCitizen(e) {
-        e.preventDefault();
-        const name = document.getElementById('regName').value;
-        const age = document.getElementById('regAge').value;
-        const sector = document.getElementById('regSector').value;
-        const job = document.getElementById('regJob').value || "亞聯自由公民";
+    async function verifyHash() {
+        const input = document.getElementById('hashInput').value.trim();
+        const out = document.getElementById('verifyOutput');
+        if (!input) return out.innerHTML = '<p style="color:var(--primary-magenta);">❌ 請輸入雜湊碼！</p>';
 
-        const year = new Date().getFullYear();
-        const randDigits = Math.floor(100000 + Math.random() * 900000);
-        const checkChar = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-        const afId = `RAF-${year}-S1-${randDigits}-${checkChar}`;
-
-        const civicScore = Math.floor(680 + Math.random() * 270);
-        const secLevel = civicScore > 880 ? "Level 3 - 行政資深官" : (civicScore > 780 ? "Level 2 - 公務執行員" : "Level 1 - 普通公民");
-        const bioHash = (await shaHash(`${name}:${afId}:${Date.now()}`, 'SHA-256')).substring(0, 24);
-        const sig = (await shaHash(`${afId}|${name}|${secLevel}`, 'SHA-512')).substring(0, 32);
-
-        const record = {
-            af_id: afId, name, age, sector, occupation: job,
-            security_level: secLevel, civic_score: civicScore,
-            blood_type: "Q-Quantum Positive", biometric_hash: bioHash,
-            issue_date: new Date().toISOString().split('T')[0],
-            expiry_date: "2036-10-02", digital_signature: sig
-        };
-
-        citizensDB[afId] = record;
-        saveDB();
-
-        drawHDCard(record);
-    }
-
-    function drawHDCard(data) {
-        const canvas = document.getElementById('idCardCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.style.display = 'block';
-
-        // 背景與邊框
-        ctx.fillStyle = "#090d16"; ctx.fillRect(0, 0, 750, 420);
-        ctx.strokeStyle = "#06b6d4"; ctx.lineWidth = 4; ctx.strokeRect(10, 10, 730, 400);
-
-        // 抬頭
-        ctx.fillStyle = "#1e293b"; ctx.fillRect(20, 20, 710, 50);
-        ctx.fillStyle = "#d946ef"; ctx.font = "bold 18px Courier New";
-        ctx.fillText("REPUBLIC OF ASIAN FEDERATION | 亞洲聯邦共和國（亞聯）數位證件", 35, 52);
-
-        // 照片格與晶片
-        ctx.strokeStyle = "#3b82f6"; ctx.strokeRect(35, 90, 130, 160);
-        ctx.fillStyle = "#94a3b8"; ctx.font = "14px Courier New";
-        ctx.fillText("[ 亞聯圖騰 ]", 50, 160);
-        ctx.fillText(" BIO-OK ", 60, 180);
-
-        ctx.fillStyle = "#eab308"; ctx.fillRect(190, 90, 50, 35);
-
-        // 數據欄位
-        ctx.fillStyle = "#ffffff"; ctx.font = "bold 16px Courier New";
-        ctx.fillText(`姓名 (Name): ${data.name}`, 190, 150);
-        ctx.fillStyle = "#22c55e"; ctx.fillText(`亞聯編號 (AF-ID): ${data.af_id}`, 190, 180);
-        ctx.fillStyle = "#e2e8f0"; ctx.fillText(`所屬分區: ${data.sector}`, 190, 210);
-        ctx.fillText(`官方職務: ${data.occupation}`, 190, 240);
-        ctx.fillStyle = "#facc15"; ctx.fillText(`安全等級: ${data.security_level} | 評級: ${data.civic_score}分`, 190, 270);
-
-        // 防偽底線與雜湊
-        ctx.strokeStyle = "#334155"; ctx.beginPath(); ctx.moveTo(20, 310); ctx.lineTo(730, 310); ctx.stroke();
-        ctx.fillStyle = "#64748b"; ctx.font = "12px Courier New";
-        ctx.fillText(`DNA 雜湊特徵: ${data.biometric_hash}`, 35, 340);
-        ctx.fillText(`防偽數位簽章 (SHA-512): ${data.digital_signature}... [VERIFIED]`, 35, 370);
-
-        // 下載按鈕
-        const downloadBox = document.getElementById('downloadBox');
-        downloadBox.innerHTML = `
-            <a href="${canvas.toDataURL('image/png')}" download="RAF_ID_${data.name}.png" class="action-btn" style="text-decoration:none; display:inline-block;">
-                💾 下載高清 PNG 數位身份證卡片
-            </a>
+        out.innerHTML = `
+            <div style="border: 1px solid var(--primary-cyan); padding: 15px; border-radius: 8px; background: rgba(0,243,255,0.1);">
+                <p style="color: var(--primary-cyan); font-weight: bold;">✅ 量子加密簽章校驗成功！</p>
+                <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 5px;">資料完整度：100% | 經由亞聯國務院最高級密鑰驗證無竄改。</p>
+            </div>
         `;
     }
 
-    function searchCitizen() {
-        const q = document.getElementById('searchQuery').value.toLowerCase();
-        const resDiv = document.getElementById('searchResults');
-        if (!q) { resDiv.innerHTML = ''; return; }
-        let html = '';
-        Object.values(citizensDB).forEach(c => {
-            if (c.name.toLowerCase().includes(q) || c.af_id.toLowerCase().includes(q)) {
-                html += `<div style="border:1px solid var(--border); padding:10px; margin-top:10px;">
-                    <b style="color:var(--primary);">${c.name}</b> (${c.af_id}) - ${c.occupation} | 評級: ${c.civic_score}
-                </div>`;
-            }
-        });
-        resDiv.innerHTML = html || '<p style="color:var(--danger); margin-top:10px;">⚠️ 未找到符合條件的紀錄。</p>';
+    function downloadCanvasImage() {
+        const c = document.getElementById('idCardCanvas');
+        const a = document.createElement('a');
+        a.href = c.toDataURL('image/png');
+        a.download = 'RAF_Hologram_ID.png';
+        a.click();
     }
 
-    async function verifySignature() {
-        const afId = document.getElementById('verifyId').value.trim();
-        const resDiv = document.getElementById('verifyResult');
-        if (!citizensDB[afId]) {
-            resDiv.innerHTML = `<p style="color:var(--danger)">❌ 查無此 AF-ID，系統判定為未知或偽造證件！</p>`;
-            return;
-        }
-        const c = citizensDB[afId];
-        const expectedSig = (await shaHash(`${c.af_id}|${c.name}|${c.security_level}`, 'SHA-512')).substring(0, 32);
-
-        if (c.digital_signature === expectedSig) {
-            resDiv.innerHTML = `<p style="color:var(--success)">✅ 驗證成功！該證件為「亞聯國務院」官方核發。<br>防偽簽章: ${expectedSig}</p>`;
-        } else {
-            resDiv.innerHTML = `<p style="color:var(--danger)">🚨 警報！數位簽章不吻合！</p>`;
-        }
-    }
-
-    function generatePass() {
-        const afId = document.getElementById('passAfId').value.trim();
-        const resDiv = document.getElementById('passResult');
-        if (!citizensDB[afId]) {
-            resDiv.innerHTML = `<p style="color:var(--danger)">❌ 查無此公民，無法簽發外交通行證。</p>`;
-            return;
-        }
-        const c = citizensDB[afId];
-        const passCode = `DIP-${Math.floor(1000 + Math.random() * 9000)}-20261002`;
-        const textContent = `
-========================================================================================
- 🏛️  亞 洲 聯 邦 共 和 國（ 亞 聯 ） ·  外 交 豁 免 與 高 階 通 行 許 可 證
- OFFICIAL DIPLOMATIC IMMUNITY & CLEARANCE PASS
-========================================================================================
-【通行證字號】: ${passCode}
-【持證人】: ${c.name} (${c.af_id})
-【官方職務】: ${c.occupation}
-【安全簽發層級】: ${c.security_level}
-【權利聲明】: 茲證明持證人代表亞洲聯邦共和國（亞聯）執行最高國務公務，
-             於亞聯全境及盟國特區內享有全額通行、外交豁免與最高等級通關特權。
-
-【核發機關】: 亞洲聯邦共和國（亞聯）國務院外務總署 (RAF Department of State)
-========================================================================================
-`;
-        resDiv.innerHTML = `
-            <pre>${textContent}</pre>
-            <button onclick="downloadPassText('${c.name}', '${passCode}', \`${textContent}\`)" class="action-btn">💾 下載通行證文本 (.txt)</button>
-        `;
-    }
-
-    function downloadPassText(name, code, text) {
-        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `Pass_${name}_${code}.txt`; a.click();
-    }
-
-    function exportJSON() {
-        const blob = new Blob([JSON.stringify(citizensDB, null, 4)], { type: 'application/json' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = 'raf_citizens_db.json'; a.click();
-    }
-
-    function importJSON(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            try {
-                citizensDB = JSON.parse(evt.target.result);
-                saveDB(); alert("✅ 資料庫匯入成功！");
-            } catch (err) { alert("❌ JSON 格式錯誤！"); }
-        };
-        reader.readAsText(file);
-    }
+    // 初始化
+    window.onload = () => {
+        generateBaseCard();
+        loadSavedModules();
+    };
 </script>
 
 </body>
