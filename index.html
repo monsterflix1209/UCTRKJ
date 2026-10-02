@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="cyberpunk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>亞洲聯邦共和國（亞聯）國務高階系統 v8.0 Enterprise Web</title>
+    <style>
+        :root[data-theme="cyberpunk"] {
+            --bg: #0d0914; --card-bg: #171026; --primary: #d946ef; --border: #06b6d4;
+            --accent: #facc15; --success: #22c55e; --danger: #ef4444; --text: #f3e8ff; --dim: #a855f7;
+        }
+        :root[data-theme="matrix"] {
+            --bg: #020b05; --card-bg: #051a0b; --primary: #22c55e; --border: #15803d;
+            --accent: #ffffff; --success: #4ade80; --danger: #f87171; --text: #dcfce7; --dim: #166534;
+        }
+        :root[data-theme="gold"] {
+            --bg: #120d02; --card-bg: #211805; --primary: #eab308; --border: #ca8a04;
+            --accent: #38bdf8; --success: #10b981; --danger: #f43f5e; --text: #fef08a; --dim: #854d0e;
+        }
+        :root[data-theme="ocean"] {
+            --bg: #03121e; --card-bg: #09253b; --primary: #38bdf8; --border: #0284c7;
+            --accent: #fde047; --success: #34d399; --danger: #fb7185; --text: #e0f2fe; --dim: #0369a1;
+        }
+        :root[data-theme="stealth"] {
+            --bg: #0f172a; --card-bg: #1e293b; --primary: #f8fafc; --border: #475569;
+            --accent: #cbd5e1; --success: #e2e8f0; --danger: #f87171; --text: #f1f5f9; --dim: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Consolas, monospace; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; transition: all 0.3s; }
+        .container { max-width: 1050px; margin: 0 auto; }
+
+        header { border: 2px solid var(--border); padding: 20px; text-align: center; background: var(--card-bg); margin-bottom: 20px; border-radius: 8px; box-shadow: 0 0 15px var(--border); }
+        h1 { color: var(--primary); font-size: 1.8rem; margin-bottom: 5px; }
+        .sub-header { color: var(--accent); font-size: 0.9rem; margin-bottom: 10px; }
+        .meta-info { font-size: 0.8rem; color: var(--dim); }
+
+        .nav-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .tab-btn, select, .action-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 10px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        .tab-btn:hover, .tab-btn.active { background: var(--primary); color: #000; border-color: var(--primary); }
+
+        .panel { display: none; background: var(--card-bg); border: 1px solid var(--border); padding: 25px; border-radius: 8px; margin-bottom: 20px; }
+        .panel.active { display: block; }
+        h2 { color: var(--accent); margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 8px; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: var(--text); }
+        input, select { width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: var(--text); border-radius: 4px; }
+        .btn-submit { background: var(--success); color: #000; border: none; padding: 12px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; width: 100%; margin-top: 10px; }
+
+        .canvas-container { text-align: center; margin-top: 20px; }
+        canvas { max-width: 100%; border: 2px solid var(--border); border-radius: 8px; box-shadow: 0 0 12px var(--primary); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+        th { background: rgba(255,255,255,0.05); color: var(--accent); }
+        pre { background: #000; border: 1px solid var(--border); padding: 15px; color: var(--primary); overflow-x: auto; border-radius: 5px; white-space: pre-wrap; }
+        .badge { color: var(--success); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏛️ 亞洲聯邦共和國（亞聯）國務系統</h1>
+        <div class="sub-header">REPUBLIC OF ASIAN FEDERATION (RAF) STATE ENGINE v8.0 WEB</div>
+        <div class="meta-info">節點: 亞聯-WEB-NODE-01 | 模式: 零 API 本地原生演算引擎</div>
+    </header>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('reg')">📝 申辦亞聯身份證</button>
+        <button class="tab-btn" onclick="switchTab('search')">🔍 情報資料庫查詢</button>
+        <button class="tab-btn" onclick="switchTab('verify')">🛡️ 防偽簽章驗證</button>
+        <button class="tab-btn" onclick="switchTab('resource')">⚙️ 資源調度監控</button>
+        <button class="tab-btn" onclick="switchTab('pass')">📜 簽發外交通行證</button>
+        <button class="tab-btn" onclick="switchTab('data')">💾 JSON 備份備份/匯入</button>
+
+        <select id="themeSelect" onchange="changeTheme(this.value)">
+            <option value="cyberpunk">⚡ 賽博霓虹 Mode</option>
+            <option value="matrix">🟢 駭客矩陣 Mode</option>
+            <option value="gold">👑 帝國尊榮 Mode</option>
+            <option value="ocean">🌊 深海戰術 Mode</option>
+            <option value="stealth">🕶️ 隱形特務 Mode</option>
+        </select>
+    </div>
+
+    <!-- 1. 申辦 -->
+    <div id="reg" class="panel active">
+        <h2>📝 自動化申辦亞聯數位公民身份證（內建 HD 畫布繪製）</h2>
+        <form id="regForm" onsubmit="registerCitizen(event)">
+            <div class="form-group">
+                <label>公民姓名 (Name):</label>
+                <input type="text" id="regName" required placeholder="例如: 魏亞聯">
+            </div>
+            <div class="form-group">
+                <label>年齡 (Age):</label>
+                <input type="number" id="regAge" required value="28">
+            </div>
+            <div class="form-group">
+                <label>所屬自治行政區 (Federation Sector):</label>
+                <select id="regSector">
+                    <option value="亞聯東亞核心行政區">亞聯東亞核心行政區 (East Core Sector)</option>
+                    <option value="亞聯東南亞高新特區">亞聯東南亞高新特區 (ASEAN High-Tech Zone)</option>
+                    <option value="亞聯南亞量子研發特區">亞聯南亞量子研發特區 (South Quantum Zone)</option>
+                    <option value="亞聯中亞清潔能源特區">亞聯中亞清潔能源特區 (Central Energy Hub)</option>
+                    <option value="亞聯太平洋海空戰略區">亞聯太平洋海空戰略區 (Pacific Aero-Marine Sector)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>公務或社會職務 (Occupation):</label>
+                <input type="text" id="regJob" placeholder="例如: 國務院量子運算工程師">
+            </div>
+            <button type="submit" class="btn-submit">⚡ 生成亞聯公民檔案與 HD PNG 證件</button>
+        </form>
+        <div class="canvas-container">
+            <canvas id="idCardCanvas" width="750" height="420" style="display:none;"></canvas>
+            <div id="downloadBox" style="margin-top:15px;"></div>
+        </div>
+    </div>
+
+    <!-- 2. 查詢 -->
+    <div id="search" class="panel">
+        <h2>🔍 亞聯國家情報與公民數據查詢</h2>
+        <div class="form-group">
+            <input type="text" id="searchQuery" placeholder="請輸入姓名或 AF-ID 關鍵字..." oninput="searchCitizen()">
+        </div>
+        <div id="searchResults"></div>
+    </div>
+
+    <!-- 3. 驗證 -->
+    <div id="verify" class="panel">
+        <h2>🛡️ 亞聯公務證件防偽與數位簽章驗證中心</h2>
+        <div class="form-group">
+            <label>請輸入要驗證的 AF-ID:</label>
+            <input type="text" id="verifyId" placeholder="例如: RAF-2026-S1-889123-X">
+        </div>
+        <button onclick="verifySignature()" class="btn-submit">🔍 執行 Web Crypto SHA-512 比對</button>
+        <div id="verifyResult" style="margin-top: 15px;"></div>
+    </div>
+
+    <!-- 4. 資源調度 -->
+    <div id="resource" class="panel">
+        <h2>⚙️ 亞聯資源調度與 AI 決策模擬</h2>
+        <p>📊 <b>亞聯整體即時總覽：</b></p>
+        <p>• 預估 GDP: <span class="badge">$21,500,000 億聯邦幣</span></p>
+        <p>• 清潔能源網覆蓋率: <span style="color:var(--accent);">97.4%</span></p>
+        <p>• 登記總公民數: <span id="citizenCount" class="badge">0</span> 人</p>
+        <table>
+            <thead>
+                <tr><th>行政分區</th><th>能源配給</th><th>治安狀態</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>亞聯東亞核心行政區</td><td>98%</td><td><span class="badge">高度優化</span></td></tr>
+                <tr><td>亞聯東南亞高新特區</td><td>95%</td><td><span class="badge">穩定繁榮</span></td></tr>
+                <tr><td>亞聯南亞量子研發特區</td><td>99%</td><td><span class="badge">核心運算中</span></td></tr>
+                <tr><td>亞聯中亞清潔能源特區</td><td>100%</td><td><span class="badge">能源過剩</span></td></tr>
+                <tr><td>亞聯太平洋海空戰略區</td><td>94%</td><td><span class="badge">戰術警戒</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 5. 通行證 -->
+    <div id="pass" class="panel">
+        <h2>📜 簽發亞聯最高外交豁免與公務通行證</h2>
+        <div class="form-group">
+            <label>授權公民 AF-ID:</label>
+            <input type="text" id="passAfId" placeholder="請輸入 AF-ID">
+        </div>
+        <button onclick="generatePass()" class="btn-submit">📜 生成並匯出通行證文本</button>
+        <div id="passResult" style="margin-top: 15px;"></div>
+    </div>
+
+    <!-- 6. 資料庫匯入匯出 -->
+    <div id="data" class="panel">
+        <h2>💾 JSON 資料庫同步與傳輸</h2>
+        <p style="margin-bottom: 10px;">可將 Python 端產生的 JSON 資料庫匯入本網頁，或將網頁資料導出至 Python 系統：</p>
+        <button onclick="exportJSON()" class="action-btn">匯出 raf_citizens_db.json</button>
+        <input type="file" id="importFile" onchange="importJSON(event)" style="display:none;">
+        <button onclick="document.getElementById('importFile').click()" class="action-btn">匯入 JSON 資料檔案</button>
+        <pre id="dataPreview" style="margin-top: 15px; max-height: 250px;"></pre>
+    </div>
+</div>
+
+<script>
+    let citizensDB = JSON.parse(localStorage.getItem('raf_citizens_db')) || {};
+
+    function saveDB() {
+        localStorage.setItem('raf_citizens_db', JSON.stringify(citizensDB));
+        updateCount();
+    }
+
+    function updateCount() {
+        document.getElementById('citizenCount').innerText = Object.keys(citizensDB).length;
+        document.getElementById('dataPreview').innerText = JSON.stringify(citizensDB, null, 2);
+    }
+    updateCount();
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    function changeTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('raf_theme', theme);
+    }
+    const savedTheme = localStorage.getItem('raf_theme') || 'cyberpunk';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.getElementById('themeSelect').value = savedTheme;
+
+    async function shaHash(text, algo = 'SHA-256') {
+        const buf = new TextEncoder().encode(text);
+        const hash = await crypto.subtle.digest(algo, buf);
+        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    async function registerCitizen(e) {
+        e.preventDefault();
+        const name = document.getElementById('regName').value;
+        const age = document.getElementById('regAge').value;
+        const sector = document.getElementById('regSector').value;
+        const job = document.getElementById('regJob').value || "亞聯自由公民";
+
+        const year = new Date().getFullYear();
+        const randDigits = Math.floor(100000 + Math.random() * 900000);
+        const checkChar = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        const afId = `RAF-${year}-S1-${randDigits}-${checkChar}`;
+
+        const civicScore = Math.floor(680 + Math.random() * 270);
+        const secLevel = civicScore > 880 ? "Level 3 - 行政資深官" : (civicScore > 780 ? "Level 2 - 公務執行員" : "Level 1 - 普通公民");
+        const bioHash = (await shaHash(`${name}:${afId}:${Date.now()}`, 'SHA-256')).substring(0, 24);
+        const sig = (await shaHash(`${afId}|${name}|${secLevel}`, 'SHA-512')).substring(0, 32);
+
+        const record = {
+            af_id: afId, name, age, sector, occupation: job,
+            security_level: secLevel, civic_score: civicScore,
+            blood_type: "Q-Quantum Positive", biometric_hash: bioHash,
+            issue_date: new Date().toISOString().split('T')[0],
+            expiry_date: "2036-10-02", digital_signature: sig
+        };
+
+        citizensDB[afId] = record;
+        saveDB();
+
+        drawHDCard(record);
+    }
+
+    function drawHDCard(data) {
+        const canvas = document.getElementById('idCardCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.style.display = 'block';
+
+        // 背景與邊框
+        ctx.fillStyle = "#090d16"; ctx.fillRect(0, 0, 750, 420);
+        ctx.strokeStyle = "#06b6d4"; ctx.lineWidth = 4; ctx.strokeRect(10, 10, 730, 400);
+
+        // 抬頭
+        ctx.fillStyle = "#1e293b"; ctx.fillRect(20, 20, 710, 50);
+        ctx.fillStyle = "#d946ef"; ctx.font = "bold 18px Courier New";
+        ctx.fillText("REPUBLIC OF ASIAN FEDERATION | 亞洲聯邦共和國（亞聯）數位證件", 35, 52);
+
+        // 照片格與晶片
+        ctx.strokeStyle = "#3b82f6"; ctx.strokeRect(35, 90, 130, 160);
+        ctx.fillStyle = "#94a3b8"; ctx.font = "14px Courier New";
+        ctx.fillText("[ 亞聯圖騰 ]", 50, 160);
+        ctx.fillText(" BIO-OK ", 60, 180);
+
+        ctx.fillStyle = "#eab308"; ctx.fillRect(190, 90, 50, 35);
+
+        // 數據欄位
+        ctx.fillStyle = "#ffffff"; ctx.font = "bold 16px Courier New";
+        ctx.fillText(`姓名 (Name): ${data.name}`, 190, 150);
+        ctx.fillStyle = "#22c55e"; ctx.fillText(`亞聯編號 (AF-ID): ${data.af_id}`, 190, 180);
+        ctx.fillStyle = "#e2e8f0"; ctx.fillText(`所屬分區: ${data.sector}`, 190, 210);
+        ctx.fillText(`官方職務: ${data.occupation}`, 190, 240);
+        ctx.fillStyle = "#facc15"; ctx.fillText(`安全等級: ${data.security_level} | 評級: ${data.civic_score}分`, 190, 270);
+
+        // 防偽底線與雜湊
+        ctx.strokeStyle = "#334155"; ctx.beginPath(); ctx.moveTo(20, 310); ctx.lineTo(730, 310); ctx.stroke();
+        ctx.fillStyle = "#64748b"; ctx.font = "12px Courier New";
+        ctx.fillText(`DNA 雜湊特徵: ${data.biometric_hash}`, 35, 340);
+        ctx.fillText(`防偽數位簽章 (SHA-512): ${data.digital_signature}... [VERIFIED]`, 35, 370);
+
+        // 下載按鈕
+        const downloadBox = document.getElementById('downloadBox');
+        downloadBox.innerHTML = `
+            <a href="${canvas.toDataURL('image/png')}" download="RAF_ID_${data.name}.png" class="action-btn" style="text-decoration:none; display:inline-block;">
+                💾 下載高清 PNG 數位身份證卡片
+            </a>
+        `;
+    }
+
+    function searchCitizen() {
+        const q = document.getElementById('searchQuery').value.toLowerCase();
+        const resDiv = document.getElementById('searchResults');
+        if (!q) { resDiv.innerHTML = ''; return; }
+        let html = '';
+        Object.values(citizensDB).forEach(c => {
+            if (c.name.toLowerCase().includes(q) || c.af_id.toLowerCase().includes(q)) {
+                html += `<div style="border:1px solid var(--border); padding:10px; margin-top:10px;">
+                    <b style="color:var(--primary);">${c.name}</b> (${c.af_id}) - ${c.occupation} | 評級: ${c.civic_score}
+                </div>`;
+            }
+        });
+        resDiv.innerHTML = html || '<p style="color:var(--danger); margin-top:10px;">⚠️ 未找到符合條件的紀錄。</p>';
+    }
+
+    async function verifySignature() {
+        const afId = document.getElementById('verifyId').value.trim();
+        const resDiv = document.getElementById('verifyResult');
+        if (!citizensDB[afId]) {
+            resDiv.innerHTML = `<p style="color:var(--danger)">❌ 查無此 AF-ID，系統判定為未知或偽造證件！</p>`;
+            return;
+        }
+        const c = citizensDB[afId];
+        const expectedSig = (await shaHash(`${c.af_id}|${c.name}|${c.security_level}`, 'SHA-512')).substring(0, 32);
+
+        if (c.digital_signature === expectedSig) {
+            resDiv.innerHTML = `<p style="color:var(--success)">✅ 驗證成功！該證件為「亞聯國務院」官方核發。<br>防偽簽章: ${expectedSig}</p>`;
+        } else {
+            resDiv.innerHTML = `<p style="color:var(--danger)">🚨 警報！數位簽章不吻合！</p>`;
+        }
+    }
+
+    function generatePass() {
+        const afId = document.getElementById('passAfId').value.trim();
+        const resDiv = document.getElementById('passResult');
+        if (!citizensDB[afId]) {
+            resDiv.innerHTML = `<p style="color:var(--danger)">❌ 查無此公民，無法簽發外交通行證。</p>`;
+            return;
+        }
+        const c = citizensDB[afId];
+        const passCode = `DIP-${Math.floor(1000 + Math.random() * 9000)}-20261002`;
+        const textContent = `
+========================================================================================
+ 🏛️  亞 洲 聯 邦 共 和 國（ 亞 聯 ） ·  外 交 豁 免 與 高 階 通 行 許 可 證
+ OFFICIAL DIPLOMATIC IMMUNITY & CLEARANCE PASS
+========================================================================================
+【通行證字號】: ${passCode}
+【持證人】: ${c.name} (${c.af_id})
+【官方職務】: ${c.occupation}
+【安全簽發層級】: ${c.security_level}
+【權利聲明】: 茲證明持證人代表亞洲聯邦共和國（亞聯）執行最高國務公務，
+             於亞聯全境及盟國特區內享有全額通行、外交豁免與最高等級通關特權。
+
+【核發機關】: 亞洲聯邦共和國（亞聯）國務院外務總署 (RAF Department of State)
+========================================================================================
+`;
+        resDiv.innerHTML = `
+            <pre>${textContent}</pre>
+            <button onclick="downloadPassText('${c.name}', '${passCode}', \`${textContent}\`)" class="action-btn">💾 下載通行證文本 (.txt)</button>
+        `;
+    }
+
+    function downloadPassText(name, code, text) {
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `Pass_${name}_${code}.txt`; a.click();
+    }
+
+    function exportJSON() {
+        const blob = new Blob([JSON.stringify(citizensDB, null, 4)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'raf_citizens_db.json'; a.click();
+    }
+
+    function importJSON(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                citizensDB = JSON.parse(evt.target.result);
+                saveDB(); alert("✅ 資料庫匯入成功！");
+            } catch (err) { alert("❌ JSON 格式錯誤！"); }
+        };
+        reader.readAsText(file);
+    }
+</script>
+
+</body>
+</html>
