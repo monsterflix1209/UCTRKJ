@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAF STATE OS · LIQUID GLASS OMNI</title>
+    <style>
+        /* ==========================================================================
+           1. 全局變數與流體玻璃視覺系統 (Liquid Glass Design System)
+           ========================================================================== */
+        :root {
+            --bg-void: #030508;
+            --glass-bg: rgba(255, 255, 255, 0.035);
+            --glass-bg-hover: rgba(255, 255, 255, 0.065);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-border-bright: rgba(255, 255, 255, 0.28);
+            --glass-shine: rgba(255, 255, 255, 0.35);
+            --glass-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+            --text-main: #f8fafc;
+            --text-sub: rgba(248, 250, 252, 0.68);
+            --text-muted: rgba(248, 250, 252, 0.42);
+            --accent-cyan: #38bdf8;
+            --accent-teal: #2dd4bf;
+            --radius-xl: 28px;
+            --radius-lg: 18px;
+            --radius-md: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; }
+
+        body {
+            background-color: var(--bg-void);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding-bottom: 60px;
+        }
+
+        /* 動態流體液態背景 Canvas */
+        #liquidCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            filter: blur(50px);
+            opacity: 0.85;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 28px 20px;
+            z-index: 1;
+            position: relative;
+        }
+
+        /* ==========================================================================
+           2. 毛玻璃與光學鍍膜面板 (Glassmorphic Cards)
+           ========================================================================== */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px) saturate(210%);
+            -webkit-backdrop-filter: blur(40px) saturate(210%);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--glass-shadow);
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        header {
+            padding: 22px 32px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 30%, rgba(255,255,255,0.6));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-title p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-top: 3px;
+            text-transform: uppercase;
+        }
+
+        /* 頂部 API 狀態列 */
+        .api-widget {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 16px;
+            border-radius: 40px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+        }
+        .api-widget input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 0.82rem;
+            outline: none;
+            width: 180px;
+        }
+        .api-widget input::placeholder { color: var(--text-muted); }
+        .api-badge {
+            font-size: 0.72rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            transition: 0.3s;
+        }
+
+        /* 導覽列與液態按鈕 */
+        .nav-container {
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            margin-bottom: 28px;
+            overflow-x: auto;
+            backdrop-filter: blur(30px);
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-sub);
+            font-size: 0.88rem;
+            font-weight: 500;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+            text-align: center;
+        }
+        .nav-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .nav-btn.active {
+            background: rgba(255, 255, 255, 0.14);
+            color: var(--text-main);
+            border-color: var(--glass-border-bright);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+        }
+
+        .panel { display: none; padding: 36px; }
+        .panel.active { display: block; animation: glassAppear 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes glassAppear {
+            from { opacity: 0; transform: scale(0.97) translateY(12px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+        @media (max-width: 868px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        /* 表單與控制件 */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.82rem; font-weight: 500; color: var(--text-sub); margin-bottom: 8px; }
+        .form-control {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            padding: 14px 18px;
+            color: #fff;
+            border-radius: var(--radius-md);
+            outline: none;
+            font-size: 0.92rem;
+            transition: all 0.25s ease;
+        }
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--glass-border-bright);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        /* 液態光澤按鈕 */
+        .btn-ios {
+            background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+            color: #000000;
+            border: none;
+            padding: 14px 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.18), inset 0 1px 0 #ffffff;
+        }
+        .btn-ios:hover { opacity: 0.92; transform: translateY(-2px); box-shadow: 0 12px 30px rgba(255, 255, 255, 0.25); }
+        .btn-ios:active { transform: scale(0.98); }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid var(--glass-border);
+            padding: 22px;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            backdrop-filter: blur(20px);
+        }
+        .stat-value { font-size: 1.9rem; font-weight: 700; margin-top: 6px; color: #fff; letter-spacing: -0.5px; }
+
+        .card-stage { display: flex; justify-content: center; align-items: center; }
+        canvas.id-card { max-width: 100%; height: auto; border-radius: 20px; border: 1px solid var(--glass-border-bright); box-shadow: 0 25px 50px rgba(0,0,0,0.7); }
+
+        .chat-box {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            height: 290px;
+            overflow-y: auto;
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .chat-msg {
+            margin-bottom: 12px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+        }
+
+        #radarCanvas { background: transparent; border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+<!-- 1. 液態背景畫布 -->
+<canvas id="liquidCanvas"></canvas>
+
+<div class="container">
+    <!-- 2. 頁首與 API 指標 -->
+    <header class="glass-panel">
+        <div class="header-title">
+            <h1>國務作業系統 · STATE OS</h1>
+            <p>REPUBLIC OF ASIAN FEDERATION · LIQUID OMNI 10.5</p>
+        </div>
+        <div class="api-widget">
+            <span class="api-badge" id="aiModeBadge">純瀏覽器 CPU AI 就緒</span>
+            <input type="password" id="geminiApiKey" placeholder="選擇性：貼上 Gemini Key" onchange="updateAiEngine()">
+        </div>
+    </header>
+
+    <!-- 3. 玻璃切換分頁 Bar -->
+    <div class="nav-container" id="navContainer">
+        <button class="nav-btn active" onclick="switchPanel('p-dashboard')">概覽 HUD</button>
+        <button class="nav-btn" onclick="switchPanel('p-identity')">全息通行證</button>
+        <button class="nav-btn" onclick="switchPanel('p-legislature')">AI 國會立法</button>
+        <button class="nav-btn" onclick="switchPanel('p-crisis')">危機處置</button>
+        <button class="nav-btn" onclick="switchPanel('p-vault')">資產金庫</button>
+        <button class="nav-btn" onclick="switchPanel('p-builder')">AI 機能創生</button>
+    </div>
+
+    <!-- Panel 1: Dashboard -->
+    <div id="p-dashboard" class="panel glass-panel active">
+        <h2 style="font-weight: 500; margin-bottom: 24px; font-size: 1.25rem; color: var(--text-sub);">系統實時戰略概況</h2>
+        <div class="grid-2">
+            <div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 22px;">
+                    <div class="stat-card">
+                        <div style="font-size:0.78rem; color:var(--text-muted);">估計 GDP</div>
+                        <div class="stat-value">$32.8T</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="font-size:0.78rem; color:var(--text-muted);">能源配給</div>
+                        <div class="stat-value">99.8%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="font-size:0.78rem; color:var(--text-muted);">防衛護盾</div>
+                        <div class="stat-value">100%</div>
+                    </div>
+                </div>
+                <div style="background: rgba(255,255,255,0.025); padding: 22px; border-radius: var(--radius-lg); border: 1px solid var(--glass-border);">
+                    <h3 style="font-size: 0.88rem; font-weight: 600; margin-bottom: 8px;">系統即時廣播</h3>
+                    <p style="color: var(--text-sub); font-size: 0.88rem; line-height: 1.6;" id="liveBroadcast">
+                        東亞特區狀態穩定。AI 引擎採用純瀏覽器 CPU/GPU 本地推理運算，具備零伺服器極速響應能力。
+                    </p>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <canvas id="radarCanvas" width="240" height="240"></canvas>
+                <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 14px; letter-spacing: 1.5px;">RADAR SCANNING ACTIVE</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 2: Holographic Pass -->
+    <div id="p-identity" class="panel glass-panel">
+        <h2 style="font-weight: 500; margin-bottom: 24px; font-size: 1.25rem; color: var(--text-sub);">全息通行證簽發</h2>
+        <div class="grid-2">
+            <div>
+                <div class="form-group">
+                    <label>證件類別</label>
+                    <select id="idType" class="form-control" onchange="generateCard()">
+                        <option value="id">聯邦公民最高身份證明</option>
+                        <option value="starship">星際艦隊指揮授權卡</option>
+                        <option value="diplomat">外交豁免特別通行證</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>持證人姓名</label>
+                    <input type="text" id="idName" class="form-control" value="魏亞聯" oninput="generateCard()">
+                </div>
+                <div class="form-group">
+                    <label>所屬 Sector / 單位</label>
+                    <input type="text" id="idSector" class="form-control" value="東亞核心特區" oninput="generateCard()">
+                </div>
+                <div class="form-group">
+                    <label>官方職務</label>
+                    <input type="text" id="idRole" class="form-control" value="量子防務特級工程師" oninput="generateCard()">
+                </div>
+                <button onclick="downloadCard()" class="btn-ios" style="margin-top: 8px;">下載 PNG 玻璃通行證</button>
+            </div>
+            <div class="card-stage">
+                <canvas id="idCardCanvas" class="id-card" width="480" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 3: AI Legislation -->
+    <div id="p-legislature" class="panel glass-panel">
+        <h2 style="font-weight: 500; margin-bottom: 24px; font-size: 1.25rem; color: var(--text-sub);">AI 國會與立法研擬</h2>
+        <div class="grid-2">
+            <div>
+                <div class="form-group">
+                    <label>輸入擬頒布之法案主題</label>
+                    <input type="text" id="lawTopic" class="form-control" placeholder="例如：開放近地軌道採礦權">
+                </div>
+                <button onclick="draftLaw()" class="btn-ios">起草國家法案</button>
+                <div id="lawOutput" style="margin-top: 18px; padding: 18px; background: rgba(255,255,255,0.025); border: 1px solid var(--glass-border); border-radius: var(--radius-md); font-size: 0.88rem; display: none;"></div>
+            </div>
+            <div>
+                <div class="chat-box" id="parliamentDebate">
+                    <div class="chat-msg"><b>[AI 議員 alpha]：</b> 建議對新興資產全面實施演算法自動課稅。</div>
+                    <div class="chat-msg"><b>[AI 議員 beta]：</b> 應考慮保留市場彈性，避免過度自動化干預。</div>
+                </div>
+                <button onclick="triggerDebate()" class="btn-ios" style="margin-top: 14px; background: rgba(255,255,255,0.12); color: #fff; box-shadow: none;">發起國會辯論</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 4: Crisis Command -->
+    <div id="p-crisis" class="panel glass-panel">
+        <h2 style="font-weight: 500; margin-bottom: 24px; font-size: 1.25rem; color: var(--text-sub);">緊急危機處置</h2>
+        <div class="grid-2">
+            <div>
+                <div class="form-group">
+                    <label>選擇危機事件模擬</label>
+                    <select id="crisisType" class="form-control">
+                        <option value="太陽耀斑爆發導致衛星鏈中斷">太陽耀斑爆發（天網連線異常）</option>
+                        <option value="未授權加密流量試圖存取國庫資產">未知網絡威脅（金融網路異常）</option>
+                        <option value="小行星碎屑接近低地軌道空間站">小行星殘骸接近軌道設施</option>
+                    </select>
+                </div>
+                <button onclick="startCrisis()" class="btn-ios">發起情境推演</button>
+                <div id="crisisOptions" style="margin-top: 18px; display: none;">
+                    <button class="btn-ios" onclick="resolveCrisis('A')" style="background:rgba(255,255,255,0.12); color:#fff; margin-bottom:10px; box-shadow:none;">方案 A: 啟動防衛過載機制</button>
+                    <button class="btn-ios" onclick="resolveCrisis('B')" style="background:rgba(255,255,255,0.06); color:#fff; box-shadow:none;">方案 B: 進行物理與軌道攔截</button>
+                </div>
+            </div>
+            <div>
+                <div id="crisisResult" style="padding: 22px; background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); min-height: 190px; font-size:0.88rem; color:var(--text-sub);">
+                    [等候指令下達...]
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 5: Cyber Vault -->
+    <div id="p-vault" class="panel glass-panel">
+        <h2 style="font-weight: 500; margin-bottom: 24px; font-size: 1.25rem; color: var(--text-sub);">資產登記金庫</h2>
+        <div class="grid-2">
+            <div>
+                <div class="form-group">
+                    <label>資產名稱</label>
+                    <input type="text" id="assetName" class="form-control" value="極光級星際巡洋艦">
+                </div>
+                <div class="form-group">
+                    <label>估計價值 (RAF Points)</label>
+                    <input type="text" id="assetVal" class="form-control" value="12,000,000 RAF">
+                </div>
+                <button onclick="registerAsset()" class="btn-ios">簽發資產權狀</button>
+            </div>
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <span style="font-size:0.88rem; color:var(--text-sub);">已登記資產</span>
+                    <button onclick="clearAssets()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.78rem;">清空清單</button>
+                </div>
+                <div id="assetList" style="background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 18px; max-height: 210px; overflow-y: auto;">
+                    <p style="color: var(--text-muted); font-size: 0.82rem;">尚無登記資產。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 6: Meta Builder -->
+    <div id="p-builder" class="panel glass-panel">
+        <h2 style="font-weight: 500; margin-bottom: 10px; font-size: 1.25rem; color: var(--text-sub);">AI 機能動態創生引擎</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 22px;">輸入需求，AI 將現場動態建立全新面板與玻璃繪圖卡片：</p>
+        <div style="display: flex; gap: 12px; margin-bottom: 22px;">
+            <input type="text" id="builderInput" class="form-control" placeholder="例如：建立「星際航行護照」，要有躍遷授權碼">
+            <button onclick="buildModule()" class="btn-ios" style="width: auto; white-space: nowrap;">即時創生</button>
+        </div>
+        <div id="builderLog" style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 14px;"></div>
+        <button onclick="clearModules()" style="background:transparent; border:1px solid var(--glass-border); color:var(--text-muted); padding:8px 16px; border-radius:10px; cursor:pointer; font-size:0.78rem;">清除所有創生模組</button>
+    </div>
+
+    <div id="dynamicPanels"></div>
+</div>
+
+<!-- 4. 本地 AI 引擎 (Transformers.js) -->
+<script type="module">
+    import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+
+    env.allowLocalModels = false;
+    let localAiGenerator = null;
+    let isAiLoading = false;
+
+    async function initBrowserAi() {
+        if (localAiGenerator || isAiLoading) return true;
+        isAiLoading = true;
+        const badge = document.getElementById('aiModeBadge');
+        if(badge) badge.innerText = "⏳ 載入純瀏覽器 AI 中...";
+
+        try {
+            localAiGenerator = await pipeline('text-generation', 'Xenova/LaMini-Flan-T5-77M');
+            if(badge) {
+                badge.innerText = "⚡ 純瀏覽器 CPU AI (已就緒)";
+                badge.style.background = "#ffffff";
+                badge.style.color = "#000000";
+            }
+            return true;
+        } catch(e) {
+            console.error("本地 AI 載入失敗:", e);
+            if(badge) badge.innerText = "標準備用模式";
+            return false;
+        } finally {
+            isAiLoading = false;
+        }
+    }
+
+    window.fetchAiResponse = async function(promptText, fallbackText) {
+        const apiKey = document.getElementById('geminiApiKey')?.value.trim();
+        if(apiKey) {
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+                });
+                const data = await res.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch(e) {
+                console.error("Gemini API 失敗，改用瀏覽器本地 AI:", e);
+            }
+        }
+
+        const ready = await initBrowserAi();
+        if (ready && localAiGenerator) {
+            try {
+                const output = await localAiGenerator(promptText, { max_new_tokens: 100, temperature: 0.7 });
+                return output[0]?.generated_text || fallbackText;
+            } catch(err) {
+                console.error("瀏覽器 AI 生成失敗:", err);
+            }
+        }
+        return fallbackText;
+    };
+</script>
+
+<!-- 5. 核心前端互動與動態畫布腳本 -->
+<script>
+    // --- 流體液態光暈 Canvas 動畫 (Liquid Canvas) ---
+    const lCanvas = document.getElementById('liquidCanvas');
+    const lCtx = lCanvas.getContext('2d');
+    let blobs = [];
+
+    function resizeLiquidCanvas() {
+        lCanvas.width = window.innerWidth;
+        lCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeLiquidCanvas);
+    resizeLiquidCanvas();
+
+    class Blob {
+        constructor() {
+            this.x = Math.random() * lCanvas.width;
+            this.y = Math.random() * lCanvas.height;
+            this.radius = Math.random() * 250 + 150;
+            this.vx = (Math.random() - 0.5) * 0.8;
+            this.vy = (Math.random() - 0.5) * 0.8;
+            this.color = Math.random() > 0.5 ? 'rgba(56, 189, 248, 0.18)' : 'rgba(168, 85, 247, 0.15)';
+        }
+        update() {
+            this.x += this.vx; this.y += this.vy;
+            if (this.x < -this.radius) this.x = lCanvas.width + this.radius;
+            if (this.x > lCanvas.width + this.radius) this.x = -this.radius;
+            if (this.y < -this.radius) this.y = lCanvas.height + this.radius;
+            if (this.y > lCanvas.height + this.radius) this.y = -this.radius;
+        }
+        draw() {
+            lCtx.beginPath();
+            let grad = lCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+            grad.addColorStop(0, this.color);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            lCtx.fillStyle = grad;
+            lCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            lCtx.fill();
+        }
+    }
+
+    for (let i = 0; i < 6; i++) blobs.push(new Blob());
+
+    function animateLiquid() {
+        lCtx.clearRect(0, 0, lCanvas.width, lCanvas.height);
+        blobs.forEach(b => { b.update(); b.draw(); });
+        requestAnimationFrame(animateLiquid);
+    }
+    animateLiquid();
+
+    // --- API 引擎管理 ---
+    let apiKey = localStorage.getItem('raf_gemini_key') || '';
+    if(apiKey) document.getElementById('geminiApiKey').value = apiKey;
+
+    function updateAiEngine() {
+        apiKey = document.getElementById('geminiApiKey').value.trim();
+        localStorage.setItem('raf_gemini_key', apiKey);
+        const badge = document.getElementById('aiModeBadge');
+        if(apiKey) {
+            badge.innerText = "雲端真 AI (Gemini)";
+            badge.style.background = "#ffffff";
+            badge.style.color = "#000000";
+        } else {
+            badge.innerText = "純瀏覽器 CPU AI 就緒";
+            badge.style.background = "rgba(255,255,255,0.15)";
+            badge.style.color = "#ffffff";
+        }
+    }
+
+    function switchPanel(panelId) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+        const target = document.getElementById(panelId);
+        if(target) target.classList.add('active');
+
+        const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick')?.includes(panelId));
+        if(btn) btn.classList.add('active');
+    }
+
+    async function sha512(str) {
+        if (window.crypto && window.crypto.subtle) {
+            try {
+                const buf = new TextEncoder().encode(str);
+                const hash = await crypto.subtle.digest('SHA-512', buf);
+                return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
+            } catch(e){}
+        }
+        return (Math.random().toString(36).substring(2) + '8A9F00E1').toUpperCase();
+    }
+
+    async function generateCard() {
+        const type = document.getElementById('idType').value;
+        const name = document.getElementById('idName').value || '未名公民';
+        const sector = document.getElementById('idSector').value || '中央特區';
+        const role = document.getElementById('idRole').value || '特務員';
+
+        const c = document.getElementById('idCardCanvas');
+        if(!c) return;
+        const ctx = c.getContext('2d');
+
+        ctx.fillStyle = '#05070a'; ctx.fillRect(0,0,480,280);
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.strokeRect(14,14,452,252);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.06)'; ctx.fillRect(15,15,450,44);
+        ctx.fillStyle = '#ffffff'; ctx.font = '600 13px -apple-system, sans-serif';
+        const titleText = type==='starship'?'RAF STARFLEET PASS':(type==='diplomat'?'RAF DIPLOMATIC PASSPORT':'RAF NATIONAL IDENTITY CARD');
+        ctx.fillText(titleText, 26, 41);
+
+        ctx.font = '600 18px -apple-system, sans-serif'; ctx.fillText(name, 26, 98);
+        ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.font = '12px -apple-system, sans-serif';
+        ctx.fillText(`SECTOR : ${sector}`, 26, 134);
+        ctx.fillText(`ROLE   : ${role}`, 26, 164);
+        ctx.fillText(`STATUS : AUTHORIZED`, 26, 194);
+
+        const hash = (await sha512(name + sector + role)).substring(0, 24);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '10px monospace';
+        ctx.fillText(`HASH: ${hash}`, 26, 252);
+    }
+
+    function downloadCard() {
+        const c = document.getElementById('idCardCanvas');
+        const a = document.createElement('a');
+        a.href = c.toDataURL('image/png');
+        a.download = 'RAF_Liquid_Pass.png';
+        a.click();
+    }
+
+    // --- 雷達動畫 ---
+    const rCanvas = document.getElementById('radarCanvas');
+    const rCtx = rCanvas.getContext('2d');
+    let angle = 0;
+
+    function renderRadar() {
+        rCtx.clearRect(0,0,240,240);
+        rCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        rCtx.lineWidth = 1;
+        [30, 60, 90].forEach(r => { rCtx.beginPath(); rCtx.arc(120, 120, r, 0, Math.PI*2); rCtx.stroke(); });
+
+        rCtx.save();
+        rCtx.translate(120,120);
+        rCtx.rotate(angle);
+        rCtx.beginPath(); rCtx.moveTo(0,0); rCtx.arc(0,0,90,0,0.5);
+        rCtx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        rCtx.fill();
+        rCtx.restore();
+
+        angle += 0.025;
+        requestAnimationFrame(renderRadar);
+    }
+    renderRadar();
+
+    async function draftLaw() {
+        const topic = document.getElementById('lawTopic').value.trim();
+        if(!topic) return alert('請輸入法案主題！');
+
+        const out = document.getElementById('lawOutput');
+        out.style.display = 'block';
+        out.innerHTML = `🧠 本地 AI 推理起草中...`;
+
+        const prompt = `草擬關於「${topic}」之國家法案條文:`;
+        const fallback = `【國務令】關於「${topic}」之暫行管理辦法：自頒布日起，授權行政分區全面實施相關配給與監督作業。`;
+
+        const result = await window.fetchAiResponse(prompt, fallback);
+        out.innerHTML = `<h4 style="color:#fff; margin-bottom:8px; font-weight:600;">📜 起草草案：</h4><p style="color:var(--text-sub); line-height:1.6;">${result}</p>`;
+    }
+
+    async function triggerDebate() {
+        const box = document.getElementById('parliamentDebate');
+        const prompt = `國會 AI 議員針對未來發展之辯論記錄:`;
+        const fallback = `[AI 議員 alpha]：建議全面提高演算法決策權比重。\n[AI 議員 beta]：反對，應為人類決策保留最終裁決權。`;
+
+        const debateText = await window.fetchAiResponse(prompt, fallback);
+        const lines = debateText.split('\n').filter(l => l.trim().length > 0);
+
+        lines.forEach(line => {
+            const div = document.createElement('div');
+            div.className = 'chat-msg';
+            div.innerHTML = `<b>${line.substring(0, 8)}</b> ${line.substring(8)}`;
+            box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function startCrisis() {
+        document.getElementById('crisisOptions').style.display = 'block';
+        document.getElementById('crisisResult').innerHTML = `<p style="color:#fff;">⚠ 警告：情境模擬啟動，請選擇處置方案。</p>`;
+    }
+
+    async function resolveCrisis(option) {
+        const crisis = document.getElementById('crisisType').value;
+        const resBox = document.getElementById('crisisResult');
+        resBox.innerHTML = `🧠 本地 AI 推理分析中...`;
+
+        const prompt = `危機事件: ${crisis}。方案 ${option} 之處置評估:`;
+        const fallback = `方案 ${option} 已順利執行。系統評估威脅已降低 85%，天網運作維持穩定。`;
+
+        const res = await window.fetchAiResponse(prompt, fallback);
+        resBox.innerHTML = `<h3 style="color:#fff; font-size:0.95rem; margin-bottom:6px;">分析報告：</h3><p style="line-height:1.6;">${res}</p>`;
+    }
+
+    let assets = JSON.parse(localStorage.getItem('raf_assets')) || [];
+
+    function renderAssets() {
+        const box = document.getElementById('assetList');
+        if(assets.length === 0) { box.innerHTML = `<p style="color:var(--text-muted); font-size:0.82rem;">尚無登記資產。</p>`; return; }
+        box.innerHTML = assets.map(a => `
+            <div style="border-bottom:1px solid var(--glass-border); padding:10px 0;">
+                <p style="color:#fff; font-weight:500;">${a.name}</p>
+                <p style="color:var(--text-muted); font-size:0.78rem;">價值: ${a.val} | Code: ${a.code}</p>
+            </div>
+        `).join('');
+    }
+
+    function registerAsset() {
+        const name = document.getElementById('assetName').value.trim();
+        const val = document.getElementById('assetVal').value.trim();
+        if(!name || !val) return alert('請填寫完整資產資訊！');
+
+        const code = 'RAF-AST-' + Math.floor(Math.random()*899999+100000);
+        assets.push({name, val, code});
+        localStorage.setItem('raf_assets', JSON.stringify(assets));
+        renderAssets();
+    }
+
+    function clearAssets() {
+        assets = [];
+        localStorage.removeItem('raf_assets');
+        renderAssets();
+    }
+
+    let createdMods = JSON.parse(localStorage.getItem('raf_created_mods')) || [];
+
+    async function buildModule() {
+        const input = document.getElementById('builderInput').value.trim();
+        if(!input) return alert('請輸入創生需求！');
+
+        const log = document.getElementById('builderLog');
+        log.innerHTML = `🧠 [瀏覽器 AI 構建中] 現場建構 UI 畫布與邏輯...`;
+
+        const modId = 'dyn_' + Date.now();
+        const modTitle = input.length > 8 ? input.substring(0,8)+'...' : input;
+        const newMod = { id: modId, title: modTitle, prompt: input };
+
+        createdMods.push(newMod);
+        localStorage.setItem('raf_created_mods', JSON.stringify(createdMods));
+
+        mountDynamicModule(newMod);
+        log.innerHTML = `✅ [創生成功] 已掛載全新 iOS 液態玻璃模組卡片！`;
+        document.getElementById('builderInput').value = '';
+    }
+
+    function mountDynamicModule(mod) {
+        const nav = document.getElementById('navContainer');
+        const btn = document.createElement('button');
+        btn.className = 'nav-btn';
+        btn.innerText = '✨ ' + mod.title;
+        btn.onclick = () => switchPanel(mod.id);
+        nav.appendChild(btn);
+
+        const container = document.getElementById('dynamicPanels');
+        const p = document.createElement('div');
+        p.id = mod.id;
+        p.className = 'panel glass-panel';
+        p.innerHTML = `
+            <h2 style="font-weight: 500; margin-bottom: 8px; font-size: 1.25rem; color: #fff;">✨ [AI 創生模組] ${mod.title}</h2>
+            <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:22px;">需求：${mod.prompt}</p>
+            <div class="grid-2">
+                <div>
+                    <div class="form-group">
+                        <label>對象名稱 / 帳號</label>
+                        <input type="text" id="${mod.id}_input1" class="form-control" value="魏亞聯">
+                    </div>
+                    <div class="form-group">
+                        <label>授權參數</label>
+                        <input type="text" id="${mod.id}_input2" class="form-control" value="AUTH-LEVEL-9">
+                    </div>
+                    <button onclick="renderDynamicCard('${mod.id}', '${mod.title}')" class="btn-ios">重繪 AI 動態卡片</button>
+                </div>
+                <div class="card-stage">
+                    <canvas id="${mod.id}_canvas" class="id-card" width="480" height="280"></canvas>
+                </div>
+            </div>
+        `;
+        container.appendChild(p);
+        setTimeout(() => renderDynamicCard(mod.id, mod.title), 100);
+    }
+
+    async function renderDynamicCard(modId, title) {
+        const val1 = document.getElementById(`${modId}_input1`)?.value || 'DEFAULT';
+        const val2 = document.getElementById(`${modId}_input2`)?.value || 'AUTH-000';
+        const c = document.getElementById(`${modId}_canvas`);
+        if(!c) return;
+        const ctx = c.getContext('2d');
+
+        ctx.fillStyle = '#05070a'; ctx.fillRect(0,0,480,280);
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.strokeRect(14,14,452,252);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(15,15,450,44);
+        ctx.fillStyle = '#ffffff'; ctx.font = '600 13px -apple-system, sans-serif';
+        ctx.fillText(`✨ DYNAMIC MODULE | ${title}`, 26, 41);
+
+        ctx.font = '600 16px -apple-system, sans-serif'; ctx.fillText(`TARGET: ${val1}`, 26, 102);
+        ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.font = '12px -apple-system, sans-serif';
+        ctx.fillText(`PARAM : ${val2}`, 26, 142);
+
+        const sig = (await sha512(val1 + val2)).substring(0, 24);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '10px monospace';
+        ctx.fillText(`HASH: ${sig}`, 26, 252);
+    }
+
+    function clearModules() {
+        createdMods = [];
+        localStorage.removeItem('raf_created_mods');
+        location.reload();
+    }
+
+    window.onload = () => {
+        generateCard();
+        renderAssets();
+        createdMods.forEach(m => mountDynamicModule(m));
+    };
+</script>
+
+</body>
+</html>
