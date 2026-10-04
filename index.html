@@ -2,818 +2,739 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAF STATE OS · LIQUID GLASS OMNI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RAF STATE OS · QWEN LIQUID GLASS</title>
     <style>
         /* ==========================================================================
-           1. 全局變數與流體玻璃視覺系統 (Liquid Glass Design System)
+           1. 彩色漸層流體玻璃視覺系統 (Fluid Gradient Glass Design System)
            ========================================================================== */
         :root {
-            --bg-void: #030508;
-            --glass-bg: rgba(255, 255, 255, 0.035);
-            --glass-bg-hover: rgba(255, 255, 255, 0.065);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --glass-border-bright: rgba(255, 255, 255, 0.28);
-            --glass-shine: rgba(255, 255, 255, 0.35);
-            --glass-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
-            --text-main: #f8fafc;
-            --text-sub: rgba(248, 250, 252, 0.68);
-            --text-muted: rgba(248, 250, 252, 0.42);
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-bg-hover: rgba(255, 255, 255, 0.14);
+            --glass-border: rgba(255, 255, 255, 0.22);
+            --glass-border-bright: rgba(255, 255, 255, 0.45);
+            --glass-shadow: 0 30px 60px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5), inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+            --text-main: #ffffff;
+            --text-sub: rgba(255, 255, 255, 0.75);
+            --text-muted: rgba(255, 255, 255, 0.45);
             --accent-cyan: #38bdf8;
-            --accent-teal: #2dd4bf;
-            --radius-xl: 28px;
-            --radius-lg: 18px;
+            --accent-purple: #c084fc;
+            --accent-pink: #f472b6;
+            --radius-xl: 32px;
+            --radius-lg: 20px;
             --radius-md: 12px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; user-select: none; }
 
-        body {
-            background-color: var(--bg-void);
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030308;
             color: var(--text-main);
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-            padding-bottom: 60px;
         }
 
-        /* 動態流體液態背景 Canvas */
-        #liquidCanvas {
+        /* 絢麗彩色動態流體背景 Canvas */
+        #fluidCanvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            z-index: -1;
-            pointer-events: none;
-            filter: blur(50px);
-            opacity: 0.85;
+            z-index: -2;
+            filter: blur(60px) saturate(220%);
         }
 
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 28px 20px;
-            z-index: 1;
-            position: relative;
+        /* 全螢幕背景玻璃覆蓋層 */
+        .glass-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            z-index: -1;
         }
 
         /* ==========================================================================
-           2. 毛玻璃與光學鍍膜面板 (Glassmorphic Cards)
+           2. iOS 鎖定畫面 (Lock Screen)
            ========================================================================== */
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(40px) saturate(210%);
-            -webkit-backdrop-filter: blur(40px) saturate(210%);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--glass-shadow);
-            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        #lockScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 80px 20px 60px 20px;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
         }
 
-        header {
-            padding: 22px 32px;
-            margin-bottom: 24px;
+        .lock-clock {
+            text-align: center;
+        }
+        .lock-date {
+            font-size: 1.25rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 6px;
+        }
+        .lock-time {
+            font-size: 6.5rem;
+            font-weight: 200;
+            letter-spacing: -2px;
+            line-height: 1;
+            background: linear-gradient(180deg, #ffffff 40%, rgba(255,255,255,0.6));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .unlock-hint {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(30px);
+            padding: 14px 32px;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: pulseHint 2s infinite;
+        }
+        @keyframes pulseHint { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+
+        /* ==========================================================================
+           3. OS 主介面與頂部狀態列 (OS Top Bar & Desktop)
+           ========================================================================== */
+        #osDesktop {
+            display: opacity: 0;
+            pointer-events: none;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
+        #osDesktop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .top-bar {
+            height: 48px;
+            padding: 0 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(25px);
+            font-size: 0.85rem;
+            z-index: 10;
         }
-        .header-title h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #ffffff 30%, rgba(255,255,255,0.6));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .header-title p {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            letter-spacing: 1px;
-            margin-top: 3px;
-            text-transform: uppercase;
-        }
-
-        /* 頂部 API 狀態列 */
-        .api-widget {
+        .ai-status-pill {
             display: flex;
             align-items: center;
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 6px 16px;
-            border-radius: 40px;
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(20px);
-        }
-        .api-widget input {
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 0.82rem;
-            outline: none;
-            width: 180px;
-        }
-        .api-widget input::placeholder { color: var(--text-muted); }
-        .api-badge {
-            font-size: 0.72rem;
-            padding: 4px 10px;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.15);
-            color: var(--text-main);
-            font-weight: 500;
-            letter-spacing: 0.3px;
-            transition: 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            font-size: 0.78rem;
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #e2e8f0; }
+        .status-dot.active { background: #34d399; box-shadow: 0 0 10px #34d399; }
+        .status-dot.loading { background: #fbbf24; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
+
+        /* 視窗控制中心 */
+        .main-workspace {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
 
-        /* 導覽列與液態按鈕 */
-        .nav-container {
-            display: flex;
-            gap: 8px;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.03);
+        .glass-window {
+            width: 100%;
+            max-width: 1100px;
+            min-height: 620px;
+            background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 22px;
-            margin-bottom: 28px;
-            overflow-x: auto;
-            backdrop-filter: blur(30px);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(50px) saturate(200%);
+            -webkit-backdrop-filter: blur(50px) saturate(200%);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: windowPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .nav-btn {
-            flex: 1;
-            padding: 12px 20px;
-            border: 1px solid transparent;
+        @keyframes windowPop { from { opacity: 0; transform: scale(0.96) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        .window-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .window-title { font-size: 1.1rem; font-weight: 600; letter-spacing: -0.3px; }
+
+        .app-nav {
+            display: flex;
+            gap: 10px;
+            padding: 12px 24px;
+            background: rgba(0, 0, 0, 0.15);
+            border-bottom: 1px solid var(--glass-border);
+            overflow-x: auto;
+        }
+        .app-tab {
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
             background: transparent;
+            border: 1px solid transparent;
             color: var(--text-sub);
             font-size: 0.88rem;
             font-weight: 500;
-            border-radius: var(--radius-lg);
             cursor: pointer;
+            transition: all 0.25s ease;
             white-space: nowrap;
-            transition: all 0.25s ease;
-            text-align: center;
         }
-        .nav-btn:hover {
-            color: var(--text-main);
-            background: rgba(255, 255, 255, 0.05);
-        }
-        .nav-btn.active {
-            background: rgba(255, 255, 255, 0.14);
-            color: var(--text-main);
+        .app-tab:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .app-tab.active {
+            background: rgba(255, 255, 255, 0.18);
             border-color: var(--glass-border-bright);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(20px);
-        }
-
-        .panel { display: none; padding: 36px; }
-        .panel.active { display: block; animation: glassAppear 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes glassAppear {
-            from { opacity: 0; transform: scale(0.97) translateY(12px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-        @media (max-width: 868px) { .grid-2 { grid-template-columns: 1fr; } }
-
-        /* 表單與控制件 */
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-size: 0.82rem; font-weight: 500; color: var(--text-sub); margin-bottom: 8px; }
-        .form-control {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--glass-border);
-            padding: 14px 18px;
             color: #fff;
-            border-radius: var(--radius-md);
-            outline: none;
-            font-size: 0.92rem;
-            transition: all 0.25s ease;
-        }
-        .form-control:focus {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--glass-border-bright);
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.5);
         }
 
-        /* 液態光澤按鈕 */
-        .btn-ios {
-            background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
-            color: #000000;
-            border: none;
-            padding: 14px 24px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.18), inset 0 1px 0 #ffffff;
+        .app-content { flex: 1; padding: 28px; display: none; }
+        .app-content.active { display: block; }
+
+        /* ==========================================================================
+           4. Qwen AI 即時打字流（Streaming Chat Interface）
+           ========================================================================== */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+            gap: 16px;
         }
-        .btn-ios:hover { opacity: 0.92; transform: translateY(-2px); box-shadow: 0 12px 30px rgba(255, 255, 255, 0.25); }
-        .btn-ios:active { transform: scale(0.98); }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.025);
-            border: 1px solid var(--glass-border);
-            padding: 22px;
-            border-radius: var(--radius-lg);
-            text-align: center;
-            backdrop-filter: blur(20px);
-        }
-        .stat-value { font-size: 1.9rem; font-weight: 700; margin-top: 6px; color: #fff; letter-spacing: -0.5px; }
-
-        .card-stage { display: flex; justify-content: center; align-items: center; }
-        canvas.id-card { max-width: 100%; height: auto; border-radius: 20px; border: 1px solid var(--glass-border-bright); box-shadow: 0 25px 50px rgba(0,0,0,0.7); }
-
-        .chat-box {
-            background: rgba(0, 0, 0, 0.35);
+        .chat-messages {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.25);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-lg);
-            padding: 18px;
-            height: 290px;
+            padding: 20px;
             overflow-y: auto;
-            font-size: 0.88rem;
-            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
-        .chat-msg {
-            margin-bottom: 12px;
-            padding: 12px 16px;
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        .message-bubble {
+            max-width: 82%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            word-break: break-word;
+            user-select: text;
+        }
+        .message-bubble.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.35), rgba(192, 132, 252, 0.35));
+            border: 1px solid var(--glass-border-bright);
+            color: #fff;
+        }
+        .message-bubble.assistant {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
             backdrop-filter: blur(15px);
         }
+        .cursor-blink { display: inline-block; width: 6px; height: 15px; background: var(--accent-cyan); margin-left: 4px; vertical-align: middle; animation: blink 0.8s infinite; }
 
-        #radarCanvas { background: transparent; border-radius: 50%; }
+        .chat-input-bar {
+            display: flex;
+            gap: 12px;
+        }
+        .glass-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            padding: 16px 20px;
+            border-radius: var(--radius-lg);
+            color: #fff;
+            outline: none;
+            font-size: 0.95rem;
+            transition: all 0.25s ease;
+            user-select: text;
+        }
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--glass-border-bright);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+        }
+        .btn-fluid {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(220,225,235,0.8));
+            color: #000;
+            font-weight: 600;
+            border: none;
+            padding: 0 28px;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+        }
+        .btn-fluid:hover { transform: translateY(-2px); opacity: 0.95; box-shadow: 0 12px 25px rgba(255,255,255,0.3); }
+        .btn-fluid:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* 模型下載進度條 */
+        .progress-box {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+        }
+        .progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple)); transition: width 0.2s ease; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 820px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        /* 證件 Canvas */
+        canvas.id-card { width: 100%; height: auto; border-radius: 20px; border: 1px solid var(--glass-border-bright); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
 
-<!-- 1. 液態背景畫布 -->
-<canvas id="liquidCanvas"></canvas>
+<!-- 1. 動態彩色流體光暈背景 -->
+<canvas id="fluidCanvas"></canvas>
+<div class="glass-overlay"></div>
 
-<div class="container">
-    <!-- 2. 頁首與 API 指標 -->
-    <header class="glass-panel">
-        <div class="header-title">
-            <h1>國務作業系統 · STATE OS</h1>
-            <p>REPUBLIC OF ASIAN FEDERATION · LIQUID OMNI 10.5</p>
-        </div>
-        <div class="api-widget">
-            <span class="api-badge" id="aiModeBadge">純瀏覽器 CPU AI 就緒</span>
-            <input type="password" id="geminiApiKey" placeholder="選擇性：貼上 Gemini Key" onchange="updateAiEngine()">
-        </div>
-    </header>
-
-    <!-- 3. 玻璃切換分頁 Bar -->
-    <div class="nav-container" id="navContainer">
-        <button class="nav-btn active" onclick="switchPanel('p-dashboard')">概覽 HUD</button>
-        <button class="nav-btn" onclick="switchPanel('p-identity')">全息通行證</button>
-        <button class="nav-btn" onclick="switchPanel('p-legislature')">AI 國會立法</button>
-        <button class="nav-btn" onclick="switchPanel('p-crisis')">危機處置</button>
-        <button class="nav-btn" onclick="switchPanel('p-vault')">資產金庫</button>
-        <button class="nav-btn" onclick="switchPanel('p-builder')">AI 機能創生</button>
+<!-- 2. iOS 鎖定畫面 -->
+<div id="lockScreen">
+    <div class="lock-clock">
+        <div class="lock-date" id="lockDate">10月24日 星期六</div>
+        <div class="lock-time" id="lockTime">09:41</div>
     </div>
-
-    <!-- Panel 1: Dashboard -->
-    <div id="p-dashboard" class="panel glass-panel active">
-        <h2 style="font-weight: 500; margin-bottom: 24px; font-size: 1.25rem; color: var(--text-sub);">系統實時戰略概況</h2>
-        <div class="grid-2">
-            <div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 22px;">
-                    <div class="stat-card">
-                        <div style="font-size:0.78rem; color:var(--text-muted);">估計 GDP</div>
-                        <div class="stat-value">$32.8T</div>
-                    </div>
-                    <div class="stat-card">
-                        <div style="font-size:0.78rem; color:var(--text-muted);">能源配給</div>
-                        <div class="stat-value">99.8%</div>
-                    </div>
-                    <div class="stat-card">
-                        <div style="font-size:0.78rem; color:var(--text-muted);">防衛護盾</div>
-                        <div class="stat-value">100%</div>
-                    </div>
-                </div>
-                <div style="background: rgba(255,255,255,0.025); padding: 22px; border-radius: var(--radius-lg); border: 1px solid var(--glass-border);">
-                    <h3 style="font-size: 0.88rem; font-weight: 600; margin-bottom: 8px;">系統即時廣播</h3>
-                    <p style="color: var(--text-sub); font-size: 0.88rem; line-height: 1.6;" id="liveBroadcast">
-                        東亞特區狀態穩定。AI 引擎採用純瀏覽器 CPU/GPU 本地推理運算，具備零伺服器極速響應能力。
-                    </p>
-                </div>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <canvas id="radarCanvas" width="240" height="240"></canvas>
-                <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 14px; letter-spacing: 1.5px;">RADAR SCANNING ACTIVE</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Panel 2: Holographic Pass -->
-    <div id="p-identity" class="panel glass-panel">
-        <h2 style="font-weight: 500; margin-bottom: 24px; font-size: 1.25rem; color: var(--text-sub);">全息通行證簽發</h2>
-        <div class="grid-2">
-            <div>
-                <div class="form-group">
-                    <label>證件類別</label>
-                    <select id="idType" class="form-control" onchange="generateCard()">
-                        <option value="id">聯邦公民最高身份證明</option>
-                        <option value="starship">星際艦隊指揮授權卡</option>
-                        <option value="diplomat">外交豁免特別通行證</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>持證人姓名</label>
-                    <input type="text" id="idName" class="form-control" value="魏亞聯" oninput="generateCard()">
-                </div>
-                <div class="form-group">
-                    <label>所屬 Sector / 單位</label>
-                    <input type="text" id="idSector" class="form-control" value="東亞核心特區" oninput="generateCard()">
-                </div>
-                <div class="form-group">
-                    <label>官方職務</label>
-                    <input type="text" id="idRole" class="form-control" value="量子防務特級工程師" oninput="generateCard()">
-                </div>
-                <button onclick="downloadCard()" class="btn-ios" style="margin-top: 8px;">下載 PNG 玻璃通行證</button>
-            </div>
-            <div class="card-stage">
-                <canvas id="idCardCanvas" class="id-card" width="480" height="280"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Panel 3: AI Legislation -->
-    <div id="p-legislature" class="panel glass-panel">
-        <h2 style="font-weight: 500; margin-bottom: 24px; font-size: 1.25rem; color: var(--text-sub);">AI 國會與立法研擬</h2>
-        <div class="grid-2">
-            <div>
-                <div class="form-group">
-                    <label>輸入擬頒布之法案主題</label>
-                    <input type="text" id="lawTopic" class="form-control" placeholder="例如：開放近地軌道採礦權">
-                </div>
-                <button onclick="draftLaw()" class="btn-ios">起草國家法案</button>
-                <div id="lawOutput" style="margin-top: 18px; padding: 18px; background: rgba(255,255,255,0.025); border: 1px solid var(--glass-border); border-radius: var(--radius-md); font-size: 0.88rem; display: none;"></div>
-            </div>
-            <div>
-                <div class="chat-box" id="parliamentDebate">
-                    <div class="chat-msg"><b>[AI 議員 alpha]：</b> 建議對新興資產全面實施演算法自動課稅。</div>
-                    <div class="chat-msg"><b>[AI 議員 beta]：</b> 應考慮保留市場彈性，避免過度自動化干預。</div>
-                </div>
-                <button onclick="triggerDebate()" class="btn-ios" style="margin-top: 14px; background: rgba(255,255,255,0.12); color: #fff; box-shadow: none;">發起國會辯論</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Panel 4: Crisis Command -->
-    <div id="p-crisis" class="panel glass-panel">
-        <h2 style="font-weight: 500; margin-bottom: 24px; font-size: 1.25rem; color: var(--text-sub);">緊急危機處置</h2>
-        <div class="grid-2">
-            <div>
-                <div class="form-group">
-                    <label>選擇危機事件模擬</label>
-                    <select id="crisisType" class="form-control">
-                        <option value="太陽耀斑爆發導致衛星鏈中斷">太陽耀斑爆發（天網連線異常）</option>
-                        <option value="未授權加密流量試圖存取國庫資產">未知網絡威脅（金融網路異常）</option>
-                        <option value="小行星碎屑接近低地軌道空間站">小行星殘骸接近軌道設施</option>
-                    </select>
-                </div>
-                <button onclick="startCrisis()" class="btn-ios">發起情境推演</button>
-                <div id="crisisOptions" style="margin-top: 18px; display: none;">
-                    <button class="btn-ios" onclick="resolveCrisis('A')" style="background:rgba(255,255,255,0.12); color:#fff; margin-bottom:10px; box-shadow:none;">方案 A: 啟動防衛過載機制</button>
-                    <button class="btn-ios" onclick="resolveCrisis('B')" style="background:rgba(255,255,255,0.06); color:#fff; box-shadow:none;">方案 B: 進行物理與軌道攔截</button>
-                </div>
-            </div>
-            <div>
-                <div id="crisisResult" style="padding: 22px; background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); min-height: 190px; font-size:0.88rem; color:var(--text-sub);">
-                    [等候指令下達...]
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Panel 5: Cyber Vault -->
-    <div id="p-vault" class="panel glass-panel">
-        <h2 style="font-weight: 500; margin-bottom: 24px; font-size: 1.25rem; color: var(--text-sub);">資產登記金庫</h2>
-        <div class="grid-2">
-            <div>
-                <div class="form-group">
-                    <label>資產名稱</label>
-                    <input type="text" id="assetName" class="form-control" value="極光級星際巡洋艦">
-                </div>
-                <div class="form-group">
-                    <label>估計價值 (RAF Points)</label>
-                    <input type="text" id="assetVal" class="form-control" value="12,000,000 RAF">
-                </div>
-                <button onclick="registerAsset()" class="btn-ios">簽發資產權狀</button>
-            </div>
-            <div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                    <span style="font-size:0.88rem; color:var(--text-sub);">已登記資產</span>
-                    <button onclick="clearAssets()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.78rem;">清空清單</button>
-                </div>
-                <div id="assetList" style="background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 18px; max-height: 210px; overflow-y: auto;">
-                    <p style="color: var(--text-muted); font-size: 0.82rem;">尚無登記資產。</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Panel 6: Meta Builder -->
-    <div id="p-builder" class="panel glass-panel">
-        <h2 style="font-weight: 500; margin-bottom: 10px; font-size: 1.25rem; color: var(--text-sub);">AI 機能動態創生引擎</h2>
-        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 22px;">輸入需求，AI 將現場動態建立全新面板與玻璃繪圖卡片：</p>
-        <div style="display: flex; gap: 12px; margin-bottom: 22px;">
-            <input type="text" id="builderInput" class="form-control" placeholder="例如：建立「星際航行護照」，要有躍遷授權碼">
-            <button onclick="buildModule()" class="btn-ios" style="width: auto; white-space: nowrap;">即時創生</button>
-        </div>
-        <div id="builderLog" style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 14px;"></div>
-        <button onclick="clearModules()" style="background:transparent; border:1px solid var(--glass-border); color:var(--text-muted); padding:8px 16px; border-radius:10px; cursor:pointer; font-size:0.78rem;">清除所有創生模組</button>
-    </div>
-
-    <div id="dynamicPanels"></div>
+    <button class="unlock-hint" onclick="unlockOS()">解鎖 RAF STATE OS ✦</button>
 </div>
 
-<!-- 4. 本地 AI 引擎 (Transformers.js) -->
+<!-- 3. 主作業系統桌面 -->
+<div id="osDesktop">
+    <!-- 頂部狀態列 -->
+    <div class="top-bar">
+        <div style="font-weight: 600; letter-spacing: 0.5px;">RAF STATE OS 11.0</div>
+        <div class="ai-status-pill">
+            <div class="status-dot loading" id="aiDot"></div>
+            <span id="aiStatusText">Qwen 本地模型載入中 (0%)</span>
+        </div>
+        <div id="desktopTime">09:41</div>
+    </div>
+
+    <!-- 視窗工作區 -->
+    <div class="main-workspace">
+        <div class="glass-window">
+            <div class="window-header">
+                <div class="window-title">聯邦國務 AI 核心指揮系統</div>
+                <div style="display:flex; gap:8px;">
+                    <span style="width:12px; height:12px; border-radius:50%; background:#ff5f56; display:inline-block;"></span>
+                    <span style="width:12px; height:12px; border-radius:50%; background:#ffbd2e; display:inline-block;"></span>
+                    <span style="width:12px; height:12px; border-radius:50%; background:#27c93f; display:inline-block;"></span>
+                </div>
+            </div>
+
+            <!-- 分頁選單 -->
+            <div class="app-nav">
+                <button class="app-tab active" onclick="switchApp('app-chat')">💬 Qwen AI 即時特務</button>
+                <button class="app-tab" onclick="switchApp('app-law')">📜 國會法案動態生成</button>
+                <button class="app-tab" onclick="switchApp('app-pass')">🆔 聯邦全息通行證</button>
+                <button class="app-tab" onclick="switchApp('app-vault')">💎 國庫資產登記處</button>
+            </div>
+
+            <!-- App 1: Qwen AI 即時打字對話 -->
+            <div id="app-chat" class="app-content active">
+                <div class="chat-container">
+                    <div id="modelProgressBox" class="progress-box">
+                        <div style="display:flex; justify-content:space-between; font-size:0.82rem; color:var(--text-sub);">
+                            <span id="progressLabel">正在從 HuggingFace 下載 Qwen1.5-0.5B 本地模型...</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar-bg"><div id="progressBarFill" class="progress-bar-fill"></div></div>
+                    </div>
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message-bubble assistant">
+                            歡迎進入 RAF STATE OS。我是執行在您瀏覽器 CPU/GPU 上的 <b>Qwen (通義千問) 離線大語言模型</b>。我不依賴任何外部 API Key，請在下方輸入任意問題，我將為您進行即時 Token 流式打字回答。
+                        </div>
+                    </div>
+                    <div class="chat-input-bar">
+                        <input type="text" id="userInput" class="glass-input" placeholder="請輸入對話或交辦指令..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+                        <button class="btn-fluid" id="sendBtn" onclick="sendChatMessage()" disabled>發送指令</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- App 2: 國會法案 AI 撰寫 -->
+            <div id="app-law" class="app-content">
+                <h3 style="font-weight: 500; margin-bottom: 16px;">AI 國家法案智庫起草系統</h3>
+                <div class="grid-2">
+                    <div>
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:0.85rem; color:var(--text-sub); display:block; margin-bottom:8px;">輸入欲擬定之法案議題</label>
+                            <input type="text" id="lawTopicInput" class="glass-input" value="近地軌道資源採礦管理法" style="width:100%;">
+                        </div>
+                        <button class="btn-fluid" id="lawBtn" onclick="generateLawWithQwen()" style="width:100%; height:48px;" disabled>啟動 Qwen 起草條文</button>
+                    </div>
+                    <div>
+                        <div class="chat-messages" id="lawOutputBox" style="height:320px;">
+                            <span style="color:var(--text-muted); font-size:0.88rem;">[等待下達法案起草指令...]</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- App 3: 聯邦全息通行證 -->
+            <div id="app-pass" class="app-content">
+                <h3 style="font-weight: 500; margin-bottom: 16px;">全息身份通行證簽發</h3>
+                <div class="grid-2">
+                    <div>
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:0.82rem; color:var(--text-sub); display:block; margin-bottom:6px;">持證人姓名</label>
+                            <input type="text" id="passName" class="glass-input" value="魏亞聯" style="width:100%;" oninput="drawPass()">
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:0.82rem; color:var(--text-sub); display:block; margin-bottom:6px;">防務部門 Sector</label>
+                            <input type="text" id="passSector" class="glass-input" value="東亞核心特區" style="width:100%;" oninput="drawPass()">
+                        </div>
+                        <div style="margin-bottom:18px;">
+                            <label style="font-size:0.82rem; color:var(--text-sub); display:block; margin-bottom:6px;">授權職務</label>
+                            <input type="text" id="passRole" class="glass-input" value="量子演算總指揮官" style="width:100%;" oninput="drawPass()">
+                        </div>
+                        <button class="btn-fluid" onclick="downloadPass()" style="width:100%; height:44px;">下載 PNG 玻璃卡片</button>
+                    </div>
+                    <div style="display:flex; justify-content:center; align-items:center;">
+                        <canvas id="passCanvas" class="id-card" width="480" height="280"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- App 4: 國庫資產金庫 -->
+            <div id="app-vault" class="app-content">
+                <h3 style="font-weight: 500; margin-bottom: 16px;">資產登錄金庫</h3>
+                <div class="grid-2">
+                    <div>
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:0.82rem; color:var(--text-sub); display:block; margin-bottom:6px;">資產項目名稱</label>
+                            <input type="text" id="assetName" class="glass-input" value="極光級星際巡洋艦" style="width:100%;">
+                        </div>
+                        <div style="margin-bottom:18px;">
+                            <label style="font-size:0.82rem; color:var(--text-sub); display:block; margin-bottom:6px;">估算價值 (RAF)</label>
+                            <input type="text" id="assetVal" class="glass-input" value="15,000,000 RAF" style="width:100%;">
+                        </div>
+                        <button class="btn-fluid" onclick="addAsset()" style="width:100%; height:44px;">簽發資產證明</button>
+                    </div>
+                    <div>
+                        <div id="assetListBox" class="chat-messages" style="height:300px;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- 4. Qwen 本地 Web AI 引擎腳本 -->
 <script type="module">
-    import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+    import { pipeline, TextStreamer, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
     env.allowLocalModels = false;
-    let localAiGenerator = null;
-    let isAiLoading = false;
+    let generator = null;
 
-    async function initBrowserAi() {
-        if (localAiGenerator || isAiLoading) return true;
-        isAiLoading = true;
-        const badge = document.getElementById('aiModeBadge');
-        if(badge) badge.innerText = "⏳ 載入純瀏覽器 AI 中...";
+    // 啟動 Qwen 本地模型載入
+    async function initQwenEngine() {
+        const dot = document.getElementById('aiDot');
+        const statusText = document.getElementById('aiStatusText');
+        const pLabel = document.getElementById('progressLabel');
+        const pFill = document.getElementById('progressBarFill');
+        const pPercent = document.getElementById('progressPercent');
 
         try {
-            localAiGenerator = await pipeline('text-generation', 'Xenova/LaMini-Flan-T5-77M');
-            if(badge) {
-                badge.innerText = "⚡ 純瀏覽器 CPU AI (已就緒)";
-                badge.style.background = "#ffffff";
-                badge.style.color = "#000000";
-            }
-            return true;
-        } catch(e) {
-            console.error("本地 AI 載入失敗:", e);
-            if(badge) badge.innerText = "標準備用模式";
-            return false;
-        } finally {
-            isAiLoading = false;
+            generator = await pipeline('text-generation', 'Xenova/Qwen1.5-0.5B-Chat', {
+                progress_callback: (p) => {
+                    if (p.status === 'progress') {
+                        const pct = Math.round(p.progress || 0);
+                        pFill.style.width = pct + '%';
+                        pPercent.innerText = pct + '%';
+                        statusText.innerText = `Qwen 載入中 (${pct}%)`;
+                    }
+                }
+            });
+
+            dot.className = 'status-dot active';
+            statusText.innerText = 'Qwen 本地 AI (已就緒)';
+            document.getElementById('modelProgressBox').style.display = 'none';
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('lawBtn').disabled = false;
+        } catch (err) {
+            console.error(err);
+            pLabel.innerText = '模型載入失敗，請重新刷新頁面。';
+            statusText.innerText = 'Qwen 載入失敗';
         }
     }
 
-    window.fetchAiResponse = async function(promptText, fallbackText) {
-        const apiKey = document.getElementById('geminiApiKey')?.value.trim();
-        if(apiKey) {
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-                });
-                const data = await res.json();
-                return data.candidates[0].content.parts[0].text;
-            } catch(e) {
-                console.error("Gemini API 失敗，改用瀏覽器本地 AI:", e);
-            }
-        }
+    // 即時打字流式對話核心
+    window.sendChatMessage = async function() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if (!text || !generator) return;
 
-        const ready = await initBrowserAi();
-        if (ready && localAiGenerator) {
-            try {
-                const output = await localAiGenerator(promptText, { max_new_tokens: 100, temperature: 0.7 });
-                return output[0]?.generated_text || fallbackText;
-            } catch(err) {
-                console.error("瀏覽器 AI 生成失敗:", err);
+        input.value = '';
+        const messagesContainer = document.getElementById('chatMessages');
+
+        // 渲染使用者 Bubble
+        const userBubble = document.createElement('div');
+        userBubble.className = 'message-bubble user';
+        userBubble.innerText = text;
+        messagesContainer.appendChild(userBubble);
+
+        // 建立 Assistant 答案 Bubble
+        const aiBubble = document.createElement('div');
+        aiBubble.className = 'message-bubble assistant';
+        const textSpan = document.createElement('span');
+        const cursor = document.createElement('span');
+        cursor.className = 'cursor-blink';
+        aiBubble.appendChild(textSpan);
+        aiBubble.appendChild(cursor);
+        messagesContainer.appendChild(aiBubble);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // 構建 Prompt
+        const prompt = `<|im_start|>user\n${text}<|im_end|>\n<|im_start|>assistant\n`;
+
+        const streamer = new TextStreamer(generator.tokenizer, {
+            skip_prompt: true,
+            skip_special_tokens: true,
+            callback_function: (outputToken) => {
+                textSpan.innerText += outputToken;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
-        }
-        return fallbackText;
+        });
+
+        document.getElementById('sendBtn').disabled = true;
+        await generator(prompt, {
+            max_new_tokens: 256,
+            temperature: 0.7,
+            streamer: streamer
+        });
+        cursor.remove();
+        document.getElementById('sendBtn').disabled = false;
     };
+
+    // AI 起草國會法案
+    window.generateLawWithQwen = async function() {
+        const topic = document.getElementById('lawTopicInput').value.trim();
+        if (!topic || !generator) return;
+
+        const outBox = document.getElementById('lawOutputBox');
+        outBox.innerHTML = '';
+
+        const aiBubble = document.createElement('div');
+        aiBubble.className = 'message-bubble assistant';
+        aiBubble.style.width = '100%';
+        const textSpan = document.createElement('span');
+        const cursor = document.createElement('span');
+        cursor.className = 'cursor-blink';
+        aiBubble.appendChild(textSpan);
+        aiBubble.appendChild(cursor);
+        outBox.appendChild(aiBubble);
+
+        const prompt = `<|im_start|>user\n請為「${topic}」起草一份明確的國家法律條文草案。<|im_end|>\n<|im_start|>assistant\n`;
+
+        const streamer = new TextStreamer(generator.tokenizer, {
+            skip_prompt: true,
+            skip_special_tokens: true,
+            callback_function: (token) => {
+                textSpan.innerText += token;
+                outBox.scrollTop = outBox.scrollHeight;
+            }
+        });
+
+        document.getElementById('lawBtn').disabled = true;
+        await generator(prompt, { max_new_tokens: 300, temperature: 0.6, streamer });
+        cursor.remove();
+        document.getElementById('lawBtn').disabled = false;
+    };
+
+    window.addEventListener('load', initQwenEngine);
 </script>
 
-<!-- 5. 核心前端互動與動態畫布腳本 -->
+<!-- 5. 視覺流體 Canvas 與 OS 介面互動邏輯 -->
 <script>
-    // --- 流體液態光暈 Canvas 動畫 (Liquid Canvas) ---
-    const lCanvas = document.getElementById('liquidCanvas');
-    const lCtx = lCanvas.getContext('2d');
+    // --- 彩色漸層流體 Canvas (Fluid Gradient Shader Simulator) ---
+    const canvas = document.getElementById('fluidCanvas');
+    const ctx = canvas.getContext('2d');
     let blobs = [];
 
-    function resizeLiquidCanvas() {
-        lCanvas.width = window.innerWidth;
-        lCanvas.height = window.innerHeight;
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     }
-    window.addEventListener('resize', resizeLiquidCanvas);
-    resizeLiquidCanvas();
+    window.addEventListener('resize', resize);
+    resize();
 
-    class Blob {
+    class FluidBlob {
         constructor() {
-            this.x = Math.random() * lCanvas.width;
-            this.y = Math.random() * lCanvas.height;
-            this.radius = Math.random() * 250 + 150;
-            this.vx = (Math.random() - 0.5) * 0.8;
-            this.vy = (Math.random() - 0.5) * 0.8;
-            this.color = Math.random() > 0.5 ? 'rgba(56, 189, 248, 0.18)' : 'rgba(168, 85, 247, 0.15)';
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.radius = Math.random() * 300 + 200;
+            this.vx = (Math.random() - 0.5) * 1.2;
+            this.vy = (Math.random() - 0.5) * 1.2;
+            const colors = [
+                'rgba(56, 189, 248, 0.45)',  // Cyan
+                'rgba(192, 132, 252, 0.45)', // Purple
+                'rgba(244, 114, 182, 0.4)',  // Pink
+                'rgba(45, 212, 191, 0.35)'   // Teal
+            ];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
         }
         update() {
             this.x += this.vx; this.y += this.vy;
-            if (this.x < -this.radius) this.x = lCanvas.width + this.radius;
-            if (this.x > lCanvas.width + this.radius) this.x = -this.radius;
-            if (this.y < -this.radius) this.y = lCanvas.height + this.radius;
-            if (this.y > lCanvas.height + this.radius) this.y = -this.radius;
+            if (this.x < -100) this.x = canvas.width + 100;
+            if (this.x > canvas.width + 100) this.x = -100;
+            if (this.y < -100) this.y = canvas.height + 100;
+            if (this.y > canvas.height + 100) this.y = -100;
         }
         draw() {
-            lCtx.beginPath();
-            let grad = lCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+            ctx.beginPath();
+            let grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
             grad.addColorStop(0, this.color);
             grad.addColorStop(1, 'rgba(0,0,0,0)');
-            lCtx.fillStyle = grad;
-            lCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            lCtx.fill();
+            ctx.fillStyle = grad;
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
         }
     }
 
-    for (let i = 0; i < 6; i++) blobs.push(new Blob());
+    for (let i = 0; i < 7; i++) blobs.push(new FluidBlob());
 
-    function animateLiquid() {
-        lCtx.clearRect(0, 0, lCanvas.width, lCanvas.height);
+    function renderFluid() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         blobs.forEach(b => { b.update(); b.draw(); });
-        requestAnimationFrame(animateLiquid);
+        requestAnimationFrame(renderFluid);
     }
-    animateLiquid();
+    renderFluid();
 
-    // --- API 引擎管理 ---
-    let apiKey = localStorage.getItem('raf_gemini_key') || '';
-    if(apiKey) document.getElementById('geminiApiKey').value = apiKey;
+    // --- 時間與時鐘更新 ---
+    function updateClock() {
+        const now = new Date();
+        const hrs = String(now.getHours()).padStart(2, '0');
+        const mins = String(now.getMinutes()).padStart(2, '0');
+        const timeStr = `${hrs}:${mins}`;
 
-    function updateAiEngine() {
-        apiKey = document.getElementById('geminiApiKey').value.trim();
-        localStorage.setItem('raf_gemini_key', apiKey);
-        const badge = document.getElementById('aiModeBadge');
-        if(apiKey) {
-            badge.innerText = "雲端真 AI (Gemini)";
-            badge.style.background = "#ffffff";
-            badge.style.color = "#000000";
-        } else {
-            badge.innerText = "純瀏覽器 CPU AI 就緒";
-            badge.style.background = "rgba(255,255,255,0.15)";
-            badge.style.color = "#ffffff";
-        }
+        document.getElementById('lockTime').innerText = timeStr;
+        document.getElementById('desktopTime').innerText = timeStr;
+
+        const options = { month: 'long', day: 'numeric', weekday: 'long' };
+        document.getElementById('lockDate').innerText = now.toLocaleDateString('zh-TW', options);
     }
+    setInterval(updateClock, 1000);
+    updateClock();
 
-    function switchPanel(panelId) {
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-
-        const target = document.getElementById(panelId);
-        if(target) target.classList.add('active');
-
-        const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick')?.includes(panelId));
-        if(btn) btn.classList.add('active');
-    }
-
-    async function sha512(str) {
-        if (window.crypto && window.crypto.subtle) {
-            try {
-                const buf = new TextEncoder().encode(str);
-                const hash = await crypto.subtle.digest('SHA-512', buf);
-                return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
-            } catch(e){}
-        }
-        return (Math.random().toString(36).substring(2) + '8A9F00E1').toUpperCase();
+    // --- 解鎖進入 OS ---
+    function unlockOS() {
+        const lockScreen = document.getElementById('lockScreen');
+        lockScreen.style.transform = 'translateY(-100%)';
+        lockScreen.style.opacity = '0';
+        setTimeout(() => {
+            lockScreen.style.display = 'none';
+            document.getElementById('osDesktop').classList.add('active');
+            drawPass();
+            renderAssets();
+        }, 500);
     }
 
-    async function generateCard() {
-        const type = document.getElementById('idType').value;
-        const name = document.getElementById('idName').value || '未名公民';
-        const sector = document.getElementById('idSector').value || '中央特區';
-        const role = document.getElementById('idRole').value || '特務員';
+    // --- App 切換 ---
+    function switchApp(appId) {
+        document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.app-content').forEach(c => c.classList.remove('active'));
 
-        const c = document.getElementById('idCardCanvas');
-        if(!c) return;
+        document.getElementById(appId).classList.add('active');
+        const tabBtn = Array.from(document.querySelectorAll('.app-tab')).find(b => b.getAttribute('onclick').includes(appId));
+        if (tabBtn) tabBtn.classList.add('active');
+    }
+
+    // --- 通行證 Canvas 繪製 ---
+    function drawPass() {
+        const name = document.getElementById('passName').value || '未名公民';
+        const sector = document.getElementById('passSector').value || '特區';
+        const role = document.getElementById('passRole').value || '指揮官';
+
+        const c = document.getElementById('passCanvas');
+        if (!c) return;
         const ctx = c.getContext('2d');
 
-        ctx.fillStyle = '#05070a'; ctx.fillRect(0,0,480,280);
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.strokeRect(14,14,452,252);
+        ctx.fillStyle = '#060810'; ctx.fillRect(0, 0, 480, 280);
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.06)'; ctx.fillRect(15,15,450,44);
-        ctx.fillStyle = '#ffffff'; ctx.font = '600 13px -apple-system, sans-serif';
-        const titleText = type==='starship'?'RAF STARFLEET PASS':(type==='diplomat'?'RAF DIPLOMATIC PASSPORT':'RAF NATIONAL IDENTITY CARD');
-        ctx.fillText(titleText, 26, 41);
+        // 漸層外框
+        let grad = ctx.createLinearGradient(0, 0, 480, 280);
+        grad.addColorStop(0, '#38bdf8'); grad.addColorStop(1, '#c084fc');
+        ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.strokeRect(12, 12, 456, 256);
 
-        ctx.font = '600 18px -apple-system, sans-serif'; ctx.fillText(name, 26, 98);
-        ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.font = '12px -apple-system, sans-serif';
-        ctx.fillText(`SECTOR : ${sector}`, 26, 134);
-        ctx.fillText(`ROLE   : ${role}`, 26, 164);
-        ctx.fillText(`STATUS : AUTHORIZED`, 26, 194);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)'; ctx.fillRect(13, 13, 454, 46);
+        ctx.fillStyle = '#ffffff'; ctx.font = '600 14px -apple-system, sans-serif';
+        ctx.fillText('REPUBLIC OF ASIAN FEDERATION · PASS', 26, 42);
 
-        const hash = (await sha512(name + sector + role)).substring(0, 24);
-        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '10px monospace';
-        ctx.fillText(`HASH: ${hash}`, 26, 252);
+        ctx.font = '700 20px -apple-system, sans-serif'; ctx.fillText(name, 26, 105);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; ctx.font = '13px -apple-system, sans-serif';
+        ctx.fillText(`SECTOR : ${sector}`, 26, 142);
+        ctx.fillText(`ROLE   : ${role}`, 26, 172);
+        ctx.fillText(`STATUS : LEVEL 9 AUTHORIZED`, 26, 202);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; ctx.font = '10px monospace';
+        ctx.fillText(`TOKEN: RAF-OS-${Math.floor(Math.random()*899999+100000)}`, 26, 250);
     }
 
-    function downloadCard() {
-        const c = document.getElementById('idCardCanvas');
+    function downloadPass() {
+        const c = document.getElementById('passCanvas');
         const a = document.createElement('a');
         a.href = c.toDataURL('image/png');
-        a.download = 'RAF_Liquid_Pass.png';
+        a.download = 'RAF_Holo_Pass.png';
         a.click();
     }
 
-    // --- 雷達動畫 ---
-    const rCanvas = document.getElementById('radarCanvas');
-    const rCtx = rCanvas.getContext('2d');
-    let angle = 0;
-
-    function renderRadar() {
-        rCtx.clearRect(0,0,240,240);
-        rCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        rCtx.lineWidth = 1;
-        [30, 60, 90].forEach(r => { rCtx.beginPath(); rCtx.arc(120, 120, r, 0, Math.PI*2); rCtx.stroke(); });
-
-        rCtx.save();
-        rCtx.translate(120,120);
-        rCtx.rotate(angle);
-        rCtx.beginPath(); rCtx.moveTo(0,0); rCtx.arc(0,0,90,0,0.5);
-        rCtx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-        rCtx.fill();
-        rCtx.restore();
-
-        angle += 0.025;
-        requestAnimationFrame(renderRadar);
-    }
-    renderRadar();
-
-    async function draftLaw() {
-        const topic = document.getElementById('lawTopic').value.trim();
-        if(!topic) return alert('請輸入法案主題！');
-
-        const out = document.getElementById('lawOutput');
-        out.style.display = 'block';
-        out.innerHTML = `🧠 本地 AI 推理起草中...`;
-
-        const prompt = `草擬關於「${topic}」之國家法案條文:`;
-        const fallback = `【國務令】關於「${topic}」之暫行管理辦法：自頒布日起，授權行政分區全面實施相關配給與監督作業。`;
-
-        const result = await window.fetchAiResponse(prompt, fallback);
-        out.innerHTML = `<h4 style="color:#fff; margin-bottom:8px; font-weight:600;">📜 起草草案：</h4><p style="color:var(--text-sub); line-height:1.6;">${result}</p>`;
-    }
-
-    async function triggerDebate() {
-        const box = document.getElementById('parliamentDebate');
-        const prompt = `國會 AI 議員針對未來發展之辯論記錄:`;
-        const fallback = `[AI 議員 alpha]：建議全面提高演算法決策權比重。\n[AI 議員 beta]：反對，應為人類決策保留最終裁決權。`;
-
-        const debateText = await window.fetchAiResponse(prompt, fallback);
-        const lines = debateText.split('\n').filter(l => l.trim().length > 0);
-
-        lines.forEach(line => {
-            const div = document.createElement('div');
-            div.className = 'chat-msg';
-            div.innerHTML = `<b>${line.substring(0, 8)}</b> ${line.substring(8)}`;
-            box.appendChild(div);
-        });
-        box.scrollTop = box.scrollHeight;
-    }
-
-    function startCrisis() {
-        document.getElementById('crisisOptions').style.display = 'block';
-        document.getElementById('crisisResult').innerHTML = `<p style="color:#fff;">⚠ 警告：情境模擬啟動，請選擇處置方案。</p>`;
-    }
-
-    async function resolveCrisis(option) {
-        const crisis = document.getElementById('crisisType').value;
-        const resBox = document.getElementById('crisisResult');
-        resBox.innerHTML = `🧠 本地 AI 推理分析中...`;
-
-        const prompt = `危機事件: ${crisis}。方案 ${option} 之處置評估:`;
-        const fallback = `方案 ${option} 已順利執行。系統評估威脅已降低 85%，天網運作維持穩定。`;
-
-        const res = await window.fetchAiResponse(prompt, fallback);
-        resBox.innerHTML = `<h3 style="color:#fff; font-size:0.95rem; margin-bottom:6px;">分析報告：</h3><p style="line-height:1.6;">${res}</p>`;
-    }
-
-    let assets = JSON.parse(localStorage.getItem('raf_assets')) || [];
+    // --- 國庫資產 LocalStorage 紀錄 ---
+    let assets = JSON.parse(localStorage.getItem('raf_assets_v2')) || [
+        { name: '極光級星際巡洋艦', val: '15,000,000 RAF' }
+    ];
 
     function renderAssets() {
-        const box = document.getElementById('assetList');
-        if(assets.length === 0) { box.innerHTML = `<p style="color:var(--text-muted); font-size:0.82rem;">尚無登記資產。</p>`; return; }
+        const box = document.getElementById('assetListBox');
+        if (assets.length === 0) { box.innerHTML = '<p style="color:var(--text-muted);">無登記資產。</p>'; return; }
         box.innerHTML = assets.map(a => `
-            <div style="border-bottom:1px solid var(--glass-border); padding:10px 0;">
-                <p style="color:#fff; font-weight:500;">${a.name}</p>
-                <p style="color:var(--text-muted); font-size:0.78rem;">價值: ${a.val} | Code: ${a.code}</p>
+            <div style="background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); padding:12px; border-radius:12px; margin-bottom:10px;">
+                <div style="font-weight:600; color:#fff;">${a.name}</div>
+                <div style="font-size:0.8rem; color:var(--text-sub); margin-top:4px;">估值: ${a.val}</div>
             </div>
         `).join('');
     }
 
-    function registerAsset() {
+    function addAsset() {
         const name = document.getElementById('assetName').value.trim();
         const val = document.getElementById('assetVal').value.trim();
-        if(!name || !val) return alert('請填寫完整資產資訊！');
-
-        const code = 'RAF-AST-' + Math.floor(Math.random()*899999+100000);
-        assets.push({name, val, code});
-        localStorage.setItem('raf_assets', JSON.stringify(assets));
+        if(!name || !val) return alert('請填寫資產資訊');
+        assets.push({name, val});
+        localStorage.setItem('raf_assets_v2', JSON.stringify(assets));
         renderAssets();
     }
-
-    function clearAssets() {
-        assets = [];
-        localStorage.removeItem('raf_assets');
-        renderAssets();
-    }
-
-    let createdMods = JSON.parse(localStorage.getItem('raf_created_mods')) || [];
-
-    async function buildModule() {
-        const input = document.getElementById('builderInput').value.trim();
-        if(!input) return alert('請輸入創生需求！');
-
-        const log = document.getElementById('builderLog');
-        log.innerHTML = `🧠 [瀏覽器 AI 構建中] 現場建構 UI 畫布與邏輯...`;
-
-        const modId = 'dyn_' + Date.now();
-        const modTitle = input.length > 8 ? input.substring(0,8)+'...' : input;
-        const newMod = { id: modId, title: modTitle, prompt: input };
-
-        createdMods.push(newMod);
-        localStorage.setItem('raf_created_mods', JSON.stringify(createdMods));
-
-        mountDynamicModule(newMod);
-        log.innerHTML = `✅ [創生成功] 已掛載全新 iOS 液態玻璃模組卡片！`;
-        document.getElementById('builderInput').value = '';
-    }
-
-    function mountDynamicModule(mod) {
-        const nav = document.getElementById('navContainer');
-        const btn = document.createElement('button');
-        btn.className = 'nav-btn';
-        btn.innerText = '✨ ' + mod.title;
-        btn.onclick = () => switchPanel(mod.id);
-        nav.appendChild(btn);
-
-        const container = document.getElementById('dynamicPanels');
-        const p = document.createElement('div');
-        p.id = mod.id;
-        p.className = 'panel glass-panel';
-        p.innerHTML = `
-            <h2 style="font-weight: 500; margin-bottom: 8px; font-size: 1.25rem; color: #fff;">✨ [AI 創生模組] ${mod.title}</h2>
-            <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:22px;">需求：${mod.prompt}</p>
-            <div class="grid-2">
-                <div>
-                    <div class="form-group">
-                        <label>對象名稱 / 帳號</label>
-                        <input type="text" id="${mod.id}_input1" class="form-control" value="魏亞聯">
-                    </div>
-                    <div class="form-group">
-                        <label>授權參數</label>
-                        <input type="text" id="${mod.id}_input2" class="form-control" value="AUTH-LEVEL-9">
-                    </div>
-                    <button onclick="renderDynamicCard('${mod.id}', '${mod.title}')" class="btn-ios">重繪 AI 動態卡片</button>
-                </div>
-                <div class="card-stage">
-                    <canvas id="${mod.id}_canvas" class="id-card" width="480" height="280"></canvas>
-                </div>
-            </div>
-        `;
-        container.appendChild(p);
-        setTimeout(() => renderDynamicCard(mod.id, mod.title), 100);
-    }
-
-    async function renderDynamicCard(modId, title) {
-        const val1 = document.getElementById(`${modId}_input1`)?.value || 'DEFAULT';
-        const val2 = document.getElementById(`${modId}_input2`)?.value || 'AUTH-000';
-        const c = document.getElementById(`${modId}_canvas`);
-        if(!c) return;
-        const ctx = c.getContext('2d');
-
-        ctx.fillStyle = '#05070a'; ctx.fillRect(0,0,480,280);
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.strokeRect(14,14,452,252);
-
-        ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(15,15,450,44);
-        ctx.fillStyle = '#ffffff'; ctx.font = '600 13px -apple-system, sans-serif';
-        ctx.fillText(`✨ DYNAMIC MODULE | ${title}`, 26, 41);
-
-        ctx.font = '600 16px -apple-system, sans-serif'; ctx.fillText(`TARGET: ${val1}`, 26, 102);
-        ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.font = '12px -apple-system, sans-serif';
-        ctx.fillText(`PARAM : ${val2}`, 26, 142);
-
-        const sig = (await sha512(val1 + val2)).substring(0, 24);
-        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '10px monospace';
-        ctx.fillText(`HASH: ${sig}`, 26, 252);
-    }
-
-    function clearModules() {
-        createdMods = [];
-        localStorage.removeItem('raf_created_mods');
-        location.reload();
-    }
-
-    window.onload = () => {
-        generateCard();
-        renderAssets();
-        createdMods.forEach(m => mountDynamicModule(m));
-    };
 </script>
 
 </body>
