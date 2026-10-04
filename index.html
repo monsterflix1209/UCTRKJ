@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>亞洲聯邦共和國 (RAF) 最高國務神級系統 v10.5 OMNI</title>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --panel-bg: rgba(15, 23, 42, 0.85);
+            --primary-cyan: #00f3ff;
+            --primary-magenta: #ff0055;
+            --accent-gold: #ffb700;
+            --accent-green: #00ffaa;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border-glow: rgba(0, 243, 255, 0.35);
+            --glass-border: rgba(255, 255, 255, 0.12);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Consolas', 'Courier New', sans-serif; user-select: none; }
+        body { background-color: var(--bg-color); color: var(--text-main); overflow-x: hidden; min-height: 100vh; position: relative; }
+
+        /* 全息背景與 CRT 掃描線 */
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; pointer-events: none; }
+        .scanline { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.3) 50%); background-size: 100% 4px; z-index: 999; pointer-events: none; opacity: 0.5; }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; z-index: 1; }
+
+        /* HUD 頂部列 */
+        header {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            backdrop-filter: blur(16px);
+            padding: 18px 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.15);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .logo-title h1 { font-size: 1.7rem; letter-spacing: 2px; color: var(--primary-cyan); text-shadow: 0 0 12px var(--primary-cyan); }
+        .logo-title p { font-size: 0.8rem; color: var(--accent-gold); letter-spacing: 1px; margin-top: 3px; }
+        .status-bar { display: flex; gap: 12px; align-items: center; }
+        .status-badge { background: rgba(0,243,255,0.1); border: 1px solid var(--primary-cyan); color: var(--primary-cyan); padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; box-shadow: 0 0 10px rgba(0,243,255,0.2); }
+        .sound-btn { background: rgba(255,183,0,0.15); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
+        .sound-btn:hover { background: var(--accent-gold); color: #000; }
+
+        /* 功能導覽列 */
+        .nav-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 20px; scrollbar-width: none; }
+        .nav-btn {
+            background: var(--panel-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .nav-btn:hover, .nav-btn.active {
+            color: #000;
+            background: var(--primary-cyan);
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 20px var(--primary-cyan);
+            transform: translateY(-2px);
+        }
+        .nav-btn.ai-created { border-color: var(--primary-magenta); color: var(--primary-magenta); }
+        .nav-btn.ai-created.active { background: var(--primary-magenta); color: #fff; box-shadow: 0 0 20px var(--primary-magenta); }
+
+        /* 面板容器 */
+        .panel { display: none; background: var(--panel-bg); border: 1px solid var(--glass-border); backdrop-filter: blur(20px); border-radius: 12px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        .panel.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 通用網格與元件 */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; color: var(--primary-cyan); font-size: 0.85rem; }
+        .form-control { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); padding: 11px 15px; color: #fff; border-radius: 6px; outline: none; font-size: 0.9rem; }
+        .form-control:focus { border-color: var(--primary-cyan); box-shadow: 0 0 10px var(--border-glow); }
+
+        .btn-action { background: var(--primary-cyan); color: #000; border: none; padding: 12px 20px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.2s; }
+        .btn-action:hover { box-shadow: 0 0 18px var(--primary-cyan); transform: scale(1.01); }
+
+        .stat-card { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); padding: 18px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 1.8rem; color: var(--primary-cyan); font-weight: bold; margin-top: 5px; text-shadow: 0 0 10px var(--primary-cyan); }
+
+        /* 3D 舞台與響應式 Canvas */
+        .card-stage { display: flex; justify-content: center; align-items: center; perspective: 1000px; padding: 10px; }
+        canvas.id-card { max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 25px var(--border-glow); transition: transform 0.1s ease-out; cursor: pointer; background: #080d1a; }
+
+        /* AI 國會與訊息框 */
+        .chat-box { background: rgba(0,0,0,0.6); border: 1px solid var(--glass-border); border-radius: 8px; padding: 15px; height: 260px; overflow-y: auto; font-size: 0.88rem; line-height: 1.6; margin-bottom: 15px; }
+        .chat-msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; }
+        .chat-msg.pro { background: rgba(0,243,255,0.1); border-left: 3px solid var(--primary-cyan); }
+        .chat-msg.con { background: rgba(255,0,85,0.1); border-left: 3px solid var(--primary-magenta); }
+
+        /* 雷達畫布 */
+        #radarCanvas { background: #020611; border-radius: 50%; border: 2px solid var(--primary-cyan); box-shadow: 0 0 20px rgba(0,243,255,0.2); }
+    </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="scanline"></div>
+
+<div class="container">
+    <!-- Header -->
+    <header>
+        <div class="logo-title">
+            <h1>🏛️ 亞聯最高國務神級系統</h1>
+            <p>REPUBLIC OF ASIAN FEDERATION · SUPREME OMNI ENGINE v10.5</p>
+        </div>
+        <div class="status-bar">
+            <button class="sound-btn" onclick="toggleAudio()">🔊 聲效: <span id="soundStatus">ON</span></button>
+            <div class="status-badge">⚡ 系統狀態：全功能正常驗證</div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <div class="nav-container" id="navContainer">
+        <button class="nav-btn active" onclick="switchPanel('p-dashboard')">🌐 國務 HUD & 雷達</button>
+        <button class="nav-btn" onclick="switchPanel('p-identity')">🪪 全息證件中心</button>
+        <button class="nav-btn" onclick="switchPanel('p-legislature')">📜 AI 國會與法案</button>
+        <button class="nav-btn" onclick="switchPanel('p-crisis')">🚨 聯邦危機指揮所</button>
+        <button class="nav-btn" onclick="switchPanel('p-vault')">💎 量子資產金庫</button>
+        <button class="nav-btn" onclick="switchPanel('p-builder')" style="border-color: var(--primary-magenta); color: var(--primary-magenta);">🧠 超 AI 機能創生</button>
+    </div>
+
+    <!-- Panel 1: Dashboard HUD & Radar -->
+    <div id="p-dashboard" class="panel active">
+        <h2 style="color: var(--primary-cyan); margin-bottom: 20px;">🌐 亞聯聯邦實時動態戰略天網</h2>
+        <div class="grid-2">
+            <div>
+                <div class="grid-3" style="margin-bottom: 20px;">
+                    <div class="stat-card">
+                        <div>總估算 GDP</div>
+                        <div class="stat-value">$32.8 兆</div>
+                    </div>
+                    <div class="stat-card">
+                        <div>戴森球能源配給率</div>
+                        <div class="stat-value" style="color:var(--accent-gold);">99.8%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div>防衛天網護盾</div>
+                        <div class="stat-value" style="color:var(--accent-green);">100%</div>
+                    </div>
+                </div>
+                <div style="background: rgba(0,0,0,0.4); padding: 18px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                    <h3 style="color: var(--accent-gold); margin-bottom: 10px;">系統全網廣播：</h3>
+                    <p style="color: var(--text-dim); line-height: 1.6; font-size: 0.9rem;" id="liveBroadcast">
+                        [即時通報] 亞聯東亞核心區與太平洋防線已建立量子鎖定。全域安全等級：LEVEL 1 ALPHA。
+                    </p>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <canvas id="radarCanvas" width="280" height="280"></canvas>
+                <p style="color: var(--primary-cyan); font-size: 0.8rem; margin-top: 10px;">📡 星際戰略天網動態掃描中</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 2: Holographic Identity Center -->
+    <div id="p-identity" class="panel">
+        <h2 style="color: var(--primary-cyan); margin-bottom: 15px;">🪪 3D 全息數位證件中心</h2>
+        <div class="grid-2">
+            <div>
+                <div class="form-group">
+                    <label>證件類別:</label>
+                    <select id="idType" class="form-control" onchange="generateCard()">
+                        <option value="id">亞聯公民最高身份證明</option>
+                        <option value="starship">亞聯星際戰艦指揮特許證</option>
+                        <option value="diplomat">亞聯外交最高豁免通行證</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>持證人姓名:</label>
+                    <input type="text" id="idName" class="form-control" value="魏亞聯" oninput="generateCard()">
+                </div>
+                <div class="form-group">
+                    <label>所屬 Sector / 單位:</label>
+                    <input type="text" id="idSector" class="form-control" value="東亞核心行政特區" oninput="generateCard()">
+                </div>
+                <div class="form-group">
+                    <label>官方職務 / 階級:</label>
+                    <input type="text" id="idRole" class="form-control" value="量子防務特級工程師" oninput="generateCard()">
+                </div>
+                <button onclick="downloadCard()" class="btn-action">💾 下載 4K 全息 PNG 證件</button>
+            </div>
+            <div class="card-stage">
+                <canvas id="idCardCanvas" class="id-card" width="500" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 3: AI Legislation & Parliament -->
+    <div id="p-legislature" class="panel">
+        <h2 style="color: var(--primary-cyan); margin-bottom: 15px;">📜 AI 國務立法與全民國會</h2>
+        <div class="grid-2">
+            <div>
+                <h3 style="color: var(--accent-gold); margin-bottom: 10px;">1. AI 即時頒布國務法案</h3>
+                <div class="form-group">
+                    <label>輸入想頒布的法案主題:</label>
+                    <input type="text" id="lawTopic" class="form-control" placeholder="例如：開放火星小行星礦產私人採礦權">
+                </div>
+                <button onclick="draftLaw()" class="btn-action">⚡ 起草並印簽國務令</button>
+                <div id="lawOutput" style="margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--primary-cyan); border-radius: 8px; font-size: 0.85rem; display: none;"></div>
+            </div>
+            <div>
+                <h3 style="color: var(--primary-magenta); margin-bottom: 10px;">2. AI 國會即時辯論與投票</h3>
+                <div class="chat-box" id="parliamentDebate">
+                    <div class="chat-msg pro"><b>[正方代表·AI-01]：</b> 提議全面啟用量子演算進行國庫資產分配，效率可提升 400%。</div>
+                    <div class="chat-msg con"><b>[反方代表·AI-02]：</b> 警告！需保留 15% 人工決策權以應對黑天鵝風險。</div>
+                </div>
+                <button onclick="triggerDebate()" class="btn-action" style="background:var(--primary-magenta); color:#fff;">🗳️ 觸發國會下一輪發言與開票</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 4: Crisis Command -->
+    <div id="p-crisis" class="panel">
+        <h2 style="color: var(--primary-magenta); margin-bottom: 15px;">🚨 聯邦突發危機緊急指揮所</h2>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">選擇模擬危機事件，並作為亞聯最高指揮官下達戰略指令：</p>
+        <div class="grid-2">
+            <div>
+                <div class="form-group">
+                    <label>選擇突發事件:</label>
+                    <select id="crisisType" class="form-control">
+                        <option value="1">太陽耀斑強烈爆發（威脅衛星網絡）</option>
+                        <option value="2">黑客組織試圖入侵量子中央銀行</option>
+                        <option value="3">外星微型隕石群接近軌道空間站</option>
+                    </select>
+                </div>
+                <button onclick="startCrisis()" class="btn-action" style="background:var(--accent-gold);">⚡ 發起危機模擬</button>
+                <div id="crisisOptions" style="margin-top: 15px; display: none;">
+                    <p style="color: var(--primary-cyan); margin-bottom: 10px;">請下達處置指令：</p>
+                    <button class="btn-action" onclick="resolveCrisis('A')" style="background:rgba(0,243,255,0.2); border:1px solid var(--primary-cyan); color:#fff;">方案 A: 啟動聯邦量子護盾過載防禦</button>
+                    <button class="btn-action" onclick="resolveCrisis('B')" style="background:rgba(255,0,85,0.2); border:1px solid var(--primary-magenta); color:#fff; margin-top:8px;">方案 B: 調動近地艦隊進行物理攔截</button>
+                </div>
+            </div>
+            <div>
+                <div id="crisisResult" style="padding: 20px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 8px; min-height: 200px;">
+                    <p style="color: var(--text-dim);">[等待發起危機模擬...]</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 5: Cyber Vault -->
+    <div id="p-vault" class="panel">
+        <h2 style="color: var(--accent-gold); margin-bottom: 15px;">💎 亞聯量子資產金庫登記</h2>
+        <div class="grid-2">
+            <div>
+                <div class="form-group">
+                    <label>資產名稱 (如私人艦艇/領地/量子智財):</label>
+                    <input type="text" id="assetName" class="form-control" value="無畏級星際巡洋艦 - 亞聯號">
+                </div>
+                <div class="form-group">
+                    <label>估算價值 (RAF 點數):</label>
+                    <input type="text" id="assetVal" class="form-control" value="8,500,000 RAF">
+                </div>
+                <button onclick="registerAsset()" class="btn-action" style="background:var(--accent-gold);">📜 登錄權狀並簽發量子代碼</button>
+            </div>
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="color: var(--primary-cyan);">已登記之資產清單:</h3>
+                    <button onclick="clearAssets()" style="background:transparent; border:none; color:var(--primary-magenta); cursor:pointer; font-size:0.8rem;">[清空紀錄]</button>
+                </div>
+                <div id="assetList" style="background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 8px; padding: 15px; max-height: 220px; overflow-y: auto;">
+                    <p style="color: var(--text-dim); font-size: 0.85rem;">尚無登記資產。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 6: Meta Builder Engine -->
+    <div id="p-builder" class="panel">
+        <h2 style="color: var(--primary-magenta); margin-bottom: 10px;">🧠 超 AI 國務機能即時創生引擎</h2>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">輸入自然語言，AI 現場為系統動態撰寫並擴充全新國務證件與模組：</p>
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="builderInput" class="form-control" style="border-color: var(--primary-magenta);" placeholder="例如：幫我創生「星際航行護照」，要有護照號碼與躍遷授權">
+            <button onclick="buildModule()" style="background: linear-gradient(135deg, var(--primary-magenta), #9333ea); color: #fff; border: none; padding: 0 25px; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap;">⚡ 即時創生</button>
+        </div>
+        <div id="builderLog" style="font-size: 0.85rem; color: var(--primary-cyan); font-family: monospace; margin-bottom: 15px;"></div>
+        <button onclick="clearModules()" style="background:transparent; border:1px solid var(--primary-magenta); color:var(--primary-magenta); padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.8rem;">🗑️ 清除所有創生模組</button>
+    </div>
+
+    <!-- Dynamic Modules Render Area -->
+    <div id="dynamicPanels"></div>
+</div>
+
+<script>
+    // ==================== 1. Web Audio SFX 音效合成器 (含自動解鎖) ====================
+    let audioEnabled = true;
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playBeep(freq = 880, type = 'sine', duration = 0.08) {
+        if (!audioEnabled) return;
+        try {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        } catch(e) {}
+    }
+
+    function toggleAudio() {
+        audioEnabled = !audioEnabled;
+        document.getElementById('soundStatus').innerText = audioEnabled ? 'ON' : 'OFF';
+        if(audioEnabled) playBeep(1000);
+    }
+
+    // ==================== 2. 全息背景粒子與雷達繪製 ====================
+    const bgCanvas = document.getElementById('bg-canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let particles = [];
+
+    function resizeBg() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
+    window.addEventListener('resize', resizeBg);
+    resizeBg();
+
+    for(let i=0; i<50; i++) {
+        particles.push({
+            x: Math.random()*window.innerWidth, y: Math.random()*window.innerHeight,
+            s: Math.random()*2+1, vx: (Math.random()-0.5)*0.6, vy: (Math.random()-0.5)*0.6,
+            c: Math.random() > 0.5 ? '#00f3ff' : '#ff0055'
+        });
+    }
+
+    function renderBg() {
+        bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+        particles.forEach(p => {
+            p.x += p.vx; p.y += p.vy;
+            if(p.x<0 || p.x>bgCanvas.width) p.vx *= -1;
+            if(p.y<0 || p.y>bgCanvas.height) p.vy *= -1;
+            bgCtx.fillStyle = p.c; bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.s, 0, Math.PI*2); bgCtx.fill();
+        });
+        requestAnimationFrame(renderBg);
+    }
+    renderBg();
+
+    // 雷達動畫
+    const rCanvas = document.getElementById('radarCanvas');
+    const rCtx = rCanvas.getContext('2d');
+    let angle = 0;
+
+    function renderRadar() {
+        rCtx.fillStyle = 'rgba(2, 6, 17, 0.15)';
+        rCtx.fillRect(0,0,280,280);
+
+        rCtx.strokeStyle = 'rgba(0, 243, 255, 0.2)';
+        rCtx.lineWidth = 1;
+        [40, 80, 120].forEach(r => { rCtx.beginPath(); rCtx.arc(140, 140, r, 0, Math.PI*2); rCtx.stroke(); });
+
+        rCtx.beginPath(); rCtx.moveTo(140, 10); rCtx.lineTo(140, 270); rCtx.moveTo(10, 140); rCtx.lineTo(270, 140); rCtx.stroke();
+
+        rCtx.save();
+        rCtx.translate(140,140);
+        rCtx.rotate(angle);
+        rCtx.beginPath();
+        rCtx.moveTo(0,0);
+        rCtx.arc(0,0,130,0,0.4);
+        rCtx.fillStyle = 'rgba(0, 243, 255, 0.15)';
+        rCtx.fill();
+        rCtx.restore();
+
+        angle += 0.03;
+        requestAnimationFrame(renderRadar);
+    }
+    renderRadar();
+
+    // ==================== 3. 切換面板與基本互動 ====================
+    function switchPanel(panelId) {
+        playBeep(1200, 'sine', 0.05);
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+        const target = document.getElementById(panelId);
+        if(target) target.classList.add('active');
+
+        const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick')?.includes(panelId));
+        if(btn) btn.classList.add('active');
+    }
+
+    // ==================== 4. 雙軌 SHA-512 與 3D 證件繪製 ====================
+    async function sha512(str) {
+        if (window.crypto && window.crypto.subtle) {
+            try {
+                const buf = new TextEncoder().encode(str);
+                const hash = await crypto.subtle.digest('SHA-512', buf);
+                return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
+            } catch(e){}
+        }
+        // Fallback pseudo-hash
+        let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+        for (let i = 0; i < str.length; i++) {
+            let ch = str.charCodeAt(i);
+            h1 = Math.imul(h1 ^ ch, 2654435761);
+            h2 = Math.imul(h2 ^ ch, 1597334677);
+        }
+        return (Math.abs(h1).toString(16) + Math.abs(h2).toString(16) + '8A9F00E17C2B4D5E').toUpperCase().substring(0, 64);
+    }
+
+    async function generateCard() {
+        const type = document.getElementById('idType').value;
+        const name = document.getElementById('idName').value || '未名公民';
+        const sector = document.getElementById('idSector').value || '中央區';
+        const role = document.getElementById('idRole').value || '特務員';
+
+        const c = document.getElementById('idCardCanvas');
+        if(!c) return;
+        const ctx = c.getContext('2d');
+
+        ctx.fillStyle = '#080d1a'; ctx.fillRect(0,0,500,300);
+        ctx.strokeStyle = type==='starship'?'#ff0055':(type==='diplomat'?'#ffb700':'#00f3ff');
+        ctx.lineWidth = 3; ctx.strokeRect(10,10,480,280);
+
+        ctx.fillStyle = 'rgba(0, 243, 255, 0.15)'; ctx.fillRect(15,15,470,40);
+        ctx.fillStyle = ctx.strokeStyle; ctx.font = 'bold 15px Consolas';
+        const titleText = type==='starship'?'🚀 RAF STARFLEET COMMAND':(type==='diplomat'?'🏛️ RAF DIPLOMATIC PASSPORT':'🪪 RAF NATIONAL CITIZEN ID');
+        ctx.fillText(titleText, 25, 41);
+
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 18px Consolas'; ctx.fillText(name, 25, 95);
+        ctx.fillStyle = '#94a3b8'; ctx.font = '13px Consolas';
+        ctx.fillText(`SECTOR : ${sector}`, 25, 130);
+        ctx.fillText(`ROLE   : ${role}`, 25, 160);
+        ctx.fillText(`STATUS : ACTIVE / AUTHORIZED`, 25, 190);
+
+        const hash = (await sha512(name + sector + role)).substring(0, 32);
+        ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '10px Consolas';
+        ctx.fillText(`SIG: ${hash}`, 25, 270);
+    }
+
+    function downloadCard() {
+        playBeep(900, 'square', 0.1);
+        const c = document.getElementById('idCardCanvas');
+        const a = document.createElement('a');
+        a.href = c.toDataURL('image/png');
+        a.download = 'RAF_Hologram_ID.png';
+        a.click();
+    }
+
+    // 3D 鼠標視差
+    document.addEventListener('mousemove', (e) => {
+        const c = document.getElementById('idCardCanvas');
+        if(!c) return;
+        const rect = c.getBoundingClientRect();
+        if(rect.width === 0) return;
+        const x = e.clientX - rect.left - rect.width/2;
+        const y = e.clientY - rect.top - rect.height/2;
+        c.style.transform = `rotateY(${x/25}deg) rotateX(${-y/25}deg)`;
+    });
+
+    // ==================== 5. AI 立法與國會辯論 ====================
+    async function draftLaw() {
+        playBeep(1000, 'sine', 0.1);
+        const topic = document.getElementById('lawTopic').value.trim();
+        if(!topic) return alert('請輸入法案主題！');
+
+        const out = document.getElementById('lawOutput');
+        out.style.display = 'block';
+        out.innerHTML = `⚡ [AI 法律模組演算中...]`;
+
+        setTimeout(async () => {
+            const sig = (await sha512(topic)).substring(0, 16);
+            out.innerHTML = `
+                <h4 style="color:var(--accent-gold); margin-bottom:8px;">🏛️ 亞洲聯邦共和國第 ${Math.floor(Math.random()*90+100)} 號令</h4>
+                <p style="color:#fff; line-height:1.5;"><b>關於【${topic}】之條例：</b><br>
+                依據亞聯憲章第三條，授權聯邦國務院全權執行本案，所有行政分區即刻遵照辦理。</p>
+                <p style="color:var(--primary-cyan); font-size:0.75rem; margin-top:8px;">量子印籤: RAF-LAW-${sig}</p>
+            `;
+        }, 500);
+    }
+
+    function triggerDebate() {
+        playBeep(1100, 'sine', 0.05);
+        const box = document.getElementById('parliamentDebate');
+        const pros = ["主張本案符合未來三十年資源最大化效益。", "數據顯示此政策將帶來 12% 經濟成長。", "可顯著降低星際物流成本。"];
+        const cons = ["警告潛在風險尚未完全排除！", "需考慮邊緣星區之權益平衡。", "建議設置三個月之試行觀察期。"];
+
+        const isPro = Math.random() > 0.5;
+        const text = isPro ? pros[Math.floor(Math.random()*pros.length)] : cons[Math.floor(Math.random()*cons.length)];
+        const sender = isPro ? `[正方代表·AI-0${Math.floor(Math.random()*5+1)}]` : `[反方代表·AI-0${Math.floor(Math.random()*5+6)}]`;
+
+        const div = document.createElement('div');
+        div.className = `chat-msg ${isPro?'pro':'con'}`;
+        div.innerHTML = `<b>${sender}：</b> ${text}`;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    // ==================== 6. 危機模擬器 ====================
+    function startCrisis() {
+        playBeep(600, 'sawtooth', 0.2);
+        document.getElementById('crisisOptions').style.display = 'block';
+        document.getElementById('crisisResult').innerHTML = `<p style="color:var(--primary-magenta);">⚠️ 警報！危機事件已發起，請選擇處置戰略方案！</p>`;
+    }
+
+    function resolveCrisis(option) {
+        playBeep(1400, 'sine', 0.1);
+        const success = Math.random() > 0.3;
+        const resBox = document.getElementById('crisisResult');
+        if(success) {
+            resBox.innerHTML = `
+                <h3 style="color:var(--accent-green);">✅ 指令執行成功！</h3>
+                <p style="color:#fff; margin-top:8px;">方案 ${option} 完美解決當前威脅，天網系統已恢復穩定。</p>
+            `;
+        } else {
+            resBox.innerHTML = `
+                <h3 style="color:var(--primary-magenta);">❌ 處置遭遇阻礙！</h3>
+                <p style="color:#fff; margin-top:8px;">方案 ${option} 遭遇未知干擾，防禦網暫時降級 5%。</p>
+            `;
+        }
+    }
+
+    // ==================== 7. 資產金庫 ====================
+    let assets = JSON.parse(localStorage.getItem('raf_assets')) || [];
+
+    function renderAssets() {
+        const box = document.getElementById('assetList');
+        if(assets.length === 0) { box.innerHTML = `<p style="color:var(--text-dim); font-size:0.85rem;">尚無登記資產。</p>`; return; }
+        box.innerHTML = assets.map(a => `
+            <div style="border-bottom:1px solid var(--glass-border); padding:8px 0;">
+                <p style="color:var(--primary-cyan); font-weight:bold;">${a.name}</p>
+                <p style="color:var(--accent-gold); font-size:0.8rem;">價值: ${a.val} | Code: ${a.code}</p>
+            </div>
+        `).join('');
+    }
+
+    function registerAsset() {
+        playBeep(1000, 'sine', 0.08);
+        const name = document.getElementById('assetName').value.trim();
+        const val = document.getElementById('assetVal').value.trim();
+        if(!name || !val) return alert('請填寫完整資產資訊！');
+
+        const code = 'RAF-AST-' + Math.floor(Math.random()*899999+100000);
+        assets.push({name, val, code});
+        localStorage.setItem('raf_assets', JSON.stringify(assets));
+        renderAssets();
+    }
+
+    function clearAssets() {
+        if(confirm('確定清空所有資產紀錄？')) {
+            assets = [];
+            localStorage.removeItem('raf_assets');
+            renderAssets();
+        }
+    }
+
+    // ==================== 8. AI 機能創生引擎（強化動態全息畫布） ====================
+    let createdMods = JSON.parse(localStorage.getItem('raf_created_mods')) || [];
+
+    function buildModule() {
+        playBeep(1300, 'sine', 0.1);
+        const input = document.getElementById('builderInput').value.trim();
+        if(!input) return alert('請輸入創生需求！');
+
+        const log = document.getElementById('builderLog');
+        log.innerHTML = `🧠 [超 AI 創生中] 分析需求 -> 構建 dynamic-canvas 邏輯 -> 部署全新 UI...`;
+
+        setTimeout(() => {
+            const modId = 'dyn_' + Date.now();
+            const modTitle = input.length > 8 ? input.substring(0,8)+'...' : input;
+            const newMod = { id: modId, title: modTitle, prompt: input };
+
+            createdMods.push(newMod);
+            localStorage.setItem('raf_created_mods', JSON.stringify(createdMods));
+
+            mountDynamicModule(newMod);
+            log.innerHTML = `✅ [創生成功] 已現場生成互動卡片並掛載至頂部選單！`;
+            document.getElementById('builderInput').value = '';
+        }, 700);
+    }
+
+    function mountDynamicModule(mod) {
+        const nav = document.getElementById('navContainer');
+        const btn = document.createElement('button');
+        btn.className = 'nav-btn ai-created';
+        btn.innerText = '✨ ' + mod.title;
+        btn.onclick = () => switchPanel(mod.id);
+        nav.appendChild(btn);
+
+        const container = document.getElementById('dynamicPanels');
+        const p = document.createElement('div');
+        p.id = mod.id;
+        p.className = 'panel';
+        p.innerHTML = `
+            <h2 style="color:var(--primary-magenta); margin-bottom:10px;">✨ [AI 即時創生模組] ${mod.title}</h2>
+            <p style="color:var(--text-dim); margin-bottom:20px;">原始需求：${mod.prompt}</p>
+            <div class="grid-2">
+                <div>
+                    <div class="form-group">
+                        <label>登記對象 / 主體名稱:</label>
+                        <input type="text" id="${mod.id}_input1" class="form-control" value="魏亞聯特許帳號">
+                    </div>
+                    <div class="form-group">
+                        <label>授權參數 / 驗證代碼:</label>
+                        <input type="text" id="${mod.id}_input2" class="form-control" value="AUTH-LEVEL-${Math.floor(Math.random()*899+100)}">
+                    </div>
+                    <button onclick="renderDynamicCard('${mod.id}', '${mod.title}')" class="btn-action" style="background:var(--primary-magenta); color:#fff;">⚡ 繪製 AI 動態證件</button>
+                </div>
+                <div class="card-stage">
+                    <canvas id="${mod.id}_canvas" class="id-card" width="500" height="300"></canvas>
+                </div>
+            </div>
+        `;
+        container.appendChild(p);
+        setTimeout(() => renderDynamicCard(mod.id, mod.title), 100);
+    }
+
+    async function renderDynamicCard(modId, title) {
+        playBeep(1100, 'sine', 0.05);
+        const val1 = document.getElementById(`${modId}_input1`)?.value || 'DEFAULT';
+        const val2 = document.getElementById(`${modId}_input2`)?.value || 'AUTH-000';
+        const c = document.getElementById(`${modId}_canvas`);
+        if(!c) return;
+        const ctx = c.getContext('2d');
+
+        ctx.fillStyle = '#090514'; ctx.fillRect(0,0,500,300);
+        ctx.strokeStyle = '#ff0055'; ctx.lineWidth = 3; ctx.strokeRect(10,10,480,280);
+
+        ctx.fillStyle = 'rgba(255,0,85,0.15)'; ctx.fillRect(15,15,470,40);
+        ctx.fillStyle = '#ff0055'; ctx.font = 'bold 15px Consolas';
+        ctx.fillText(`✨ AI OMNI MODULE | ${title}`, 25, 41);
+
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 16px Consolas';
+        ctx.fillText(`TARGET : ${val1}`, 25, 100);
+        ctx.fillText(`PARAM  : ${val2}`, 25, 140);
+        ctx.fillStyle = '#94a3b8'; ctx.font = '13px Consolas';
+        ctx.fillText(`ISSUED BY RAF NEURAL META ENGINE`, 25, 180);
+
+        const sig = (await sha512(val1 + val2)).substring(0, 28);
+        ctx.fillStyle = '#ffb700'; ctx.font = '10px Consolas';
+        ctx.fillText(`DYNAMIC HASH: ${sig}`, 25, 270);
+    }
+
+    function clearModules() {
+        if(confirm('確定清除所有 AI 創生之模組？')) {
+            createdMods = [];
+            localStorage.removeItem('raf_created_mods');
+            location.reload();
+        }
+    }
+
+    // 初始化
+    window.onload = () => {
+        generateCard();
+        renderAssets();
+        createdMods.forEach(m => mountDynamicModule(m));
+    };
+</script>
+
+</body>
+</html>
